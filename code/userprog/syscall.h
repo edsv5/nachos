@@ -30,7 +30,7 @@
 #define SC_Fork		9
 #define SC_Yield	10
 #define SC_SemCreate	11 // Listo (?)
-#define SC_SemDestroy	12 // Listo (?)
+#define SC_SemDestroy	12 // Listo
 #define SC_SemSignal	13
 #define SC_SemWait	14
 

@@ -408,7 +408,7 @@ void Nachos_SemCreate(){
   //TODO: Preguntar esto
 
   // CAMBIO, ahora se inserta en el mapa un semáforo asociado a un índice
-  
+
   Semaphore* nuevoSem = new Semaphore("SemNuevo", initval);	// Crea un semáfoto con el initval especificado
 
   // Inserta en el mapa de semáforos
@@ -424,10 +424,6 @@ void Nachos_SemCreate(){
   cantidadSemaforosNachos++;
 
   //TODO: Preguntar si esto está bien
-  // Crea el semáforo haciendo uso de la clase synch.cc, se crea un semáforo con
-  // el initval correspondiente
-
-  //Semaphore* semC = new Semaphore("Sem", initval);
 
   returnFromSystemCall();
 
@@ -445,14 +441,19 @@ void Nachos_SemCreate(){
 
 void Nachos_SemDestroy(){
 
-  int SemId = machine->ReadRegister(4); // Saca el parámetro del registro
+  int semId = machine->ReadRegister(4); // Saca el parámetro del registro
 
-  //Elimina el semáforo id de la estructura de datos de semáforos del kernel
-	if((int)mapSemaforosNachos->erase(SemId) > 0) // Si el borrado del semáforo fue exitoso
+  // Destruye el semáforo
+
+  mapSemaforosNachos->at(semId)->Destroy();
+
+  //Elimina el semáforo correspondiente del mapa
+
+	if((int) mapSemaforosNachos->erase(semId) > 0) // Si el borrado del mapa fue exitoso
  	{
 		machine->WriteRegister(2,0); // Devuelve 0
 	}
-	else // Si no tiene éxito
+	else // Si no tiene éxito devuelve -1
   {
   	machine->WriteRegister(2,-1);
   }
