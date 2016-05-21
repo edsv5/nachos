@@ -94,6 +94,20 @@ void Nachos_Halt() {
 
 // Implementado en el case de abajo
 
+
+/////////////////////////// System call 4 ///////////////////////////
+
+/*
+ * Por implementar
+ *
+*/
+
+void Nachos_Create(){
+
+  returnFromSystemCall();
+
+}
+
 /////////////////////////// System call 5 ///////////////////////////
 
 void Nachos_Open() {
@@ -161,7 +175,7 @@ void Nachos_Open() {
 
 void Nachos_Read() {
 
-  printf("Entrando a Nachos_Read... \n")
+  printf("Entrando a Nachos_Read... \n");
 
   int bufferAddr = machine->ReadRegister( 4 ); // Lee la dirección del buffer que se quiere leer
   int size = machine->ReadRegister( 5 ); // Tamaño del archivo por leer
@@ -361,6 +375,8 @@ void Nachos_Write() {
 // Averiguar cómo involucrarlos verdaderamente
 void Nachos_SemCreate(){
 
+  printf("Entrando a SemCreate\n");
+
   // Importante:
   // cantidadSemaforosNachos : variable global con la cantidad de semáforos activos
   // mapSemaforosNachos : mapa con los semáforos, asocia cada índice de semáforo
@@ -370,8 +386,18 @@ void Nachos_SemCreate(){
   // Inserta en el mapa de semáforos global, un semáforo inicializado en el valor del
   // initval. Insertaen cantidadSemaforosNachos porque es el índice del semáforo,
   // con initval porque es el valor ingresado en el parámetro
+  //
+  // Recuerde: mapSemaforosNachos está en system.h
 
   mapSemaforosNachos->insert(std::pair<int,int>(cantidadSemaforosNachos,initval));
+
+  //TODO: Preguntar esto
+  // CAMBIO, ahora se inserta en el mapa un semáforo asociado a un índice
+  //Semaphore* nuevoSem = new Semaphore("SemNuevo", initval);	// Crea un semáfoto con el initval especificado
+
+  // Inserta en el mapa de semáforos
+
+  //mapSemaforosNachos->insert(std::pair<int,Semaphore*>(cantidadSemaforosNachos,nuevoSem));
 
   // Retorna en registro 2 el índice del semáforo recién creado
 
@@ -461,52 +487,54 @@ ExceptionHandler(ExceptionType which)
           Nachos_Halt();
           break;
         case SC_Exit:                 // System call # 1
-          printf("--- Case SC_Exit ---\n");
+          printf("--- SC_Exit ---\n");
           currentThread->Finish();    // Finaliza el thread actual
           break;
         case SC_Exec:                 // System call # 2
-          // Código para exec
+          printf("--- SC_Exec ---\n");
           break;
         case SC_Join:                 // System call # 3
-          // Código de Join
+          printf("--- SC_Join ---\n");
           break;
         case SC_Create:               // System call # 4
-          // Código de create
+          printf("--- SC_Create ---\n");
+          Nachos_Create();
           break;
         case SC_Open:                 // System call # 5
-          printf("--- Case SC_Open ---\n");
+          printf("--- SC_Open ---\n");
           Nachos_Open();
           break;
         case SC_Read:                 // System call # 6
-          printf("--- Case SC_Read ---\n");
+          printf("--- SC_Read ---\n");
           Nachos_Read();
           break;
         case SC_Write:                // System call # 7
-          printf("--- Case SC_Write ---\n");
+          printf("--- SC_Write ---\n");
           Nachos_Write();
           break;
         case SC_Close:                // System call # 8
-          // Código de close
+          printf("--- SC_Close ---\n");
           break;
         case SC_Fork:                 // System call # 9
-          // Fork
+          printf("--- SC_Fork ---\n");
           break;
         case SC_Yield:                // System call # 10
-          // Yield
+          printf("--- SC_Yield ---\n");
           break;
         case SC_SemCreate:            // System call # 11
-          printf("--- Case SC_SemCreate ---\n");
+          printf("--- SC_SemCreate ---\n");
           Nachos_SemCreate();
           break;
         case SC_SemDestroy:           // System call # 12
-          printf("--- Case SC_SemDestroy ---\n");
+          printf("--- SC_SemDestroy ---\n");
           Nachos_SemDestroy();
           break;
         case SC_SemSignal:            // System call # 13
-          printf("--- Case SC_SemSignal ---\n");
+          printf("--- SC_SemSignal ---\n");
           Nachos_SemSignal();
           break;
         case SC_SemWait:              // System call # 14
+          printf("--- SC_SemWait ---\n");
           Nachos_SemWait();
           break;
         default:
