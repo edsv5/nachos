@@ -123,7 +123,6 @@ void Nachos_Create(){
 }
 
 
- // >>>>>>> c9e62ce8fa883504c6f4a767456c9e762ac3c6bd
 /////////////////////////// System call 5 ///////////////////////////
 
 void Nachos_Open() {
@@ -513,12 +512,7 @@ ExceptionHandler(ExceptionType which)
           printf("--- SC_Join ---\n");
           break;
         case SC_Create:               // System call # 4
-//<<<<<<< HEAD
           printf("--- SC_Create ---\n");
-//=======
-          // Código de create
-          printf("--- Case SC_Create ---\n");
-//>>>>>>> c9e62ce8fa883504c6f4a767456c9e762ac3c6bd
           Nachos_Create();
           break;
         case SC_Open:                 // System call # 5
