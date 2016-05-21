@@ -69,11 +69,11 @@ extern BitMap* mapMemoria; // Para representar las páginas de memoria
 extern int cantidadSemaforosNachos;
 
 // Mapa que indica, el índice del semáforo, junto con su respectivo estado
-extern std::map<int,int> *mapSemaforosNachos;
+//extern std::map<int,int> *mapSemaforosNachos;
 
 // Agregado: Que mapee índices con punteros a semáforos
 
-//extern std::map<int, Semaphore* > *mapSemaforosNachos;
+extern std::map<int, Semaphore* > *mapSemaforosNachos;
 
 
 //Tabla global de files abiertos (prueba mientras se implementa la multiprogramación)
