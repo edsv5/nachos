@@ -161,6 +161,8 @@ void Nachos_Open() {
 
 void Nachos_Read() {
 
+  printf("Entrando a Nachos_Read... \n")
+
   int bufferAddr = machine->ReadRegister( 4 ); // Lee la dirección del buffer que se quiere leer
   int size = machine->ReadRegister( 5 ); // Tamaño del archivo por leer
   OpenFileId descriptorFile = machine->ReadRegister( 6 ); // Id del file que se quiere leer
