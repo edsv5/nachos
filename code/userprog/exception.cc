@@ -94,6 +94,36 @@ void Nachos_Halt() {
 
 // Implementado en el case de abajo
 
+
+
+/////////////////////////// System call 4 ///////////////////////////
+void Nachos_Create(){
+	//Recupera el primer parametro (direccion en memoria)
+	int filePtr = machine->ReadRegister(4);
+	//Recupera el nombre del archivo de la memoria
+	char* filename = &machine->mainMemory[filePtr];
+	//si el nombre ese nulo
+	if(filename = NULL){
+		DEBUG('p', "No hay nombre de archivo en la memoria\n");	
+	}
+	//si el nombre tiene tamaño 0
+	if(strlen(filename) == 0){
+		DEBUG('p', "Nombre del archivo tiene tamaño 0\n");
+	}
+	DEBUG('p', "Creando archivo\n");
+	//Crea el archivo
+	bool result = fileSystem->Create(filename, 100);
+	//Verifica si se creo el archivo
+	if(result){
+		DEBUG('p', "Archivo %s creado\n", filename);
+	}else{
+		DEBUG('p', "
+		Error al crear archivo\n");
+	}
+	returnFromSystemCall();		// Update the PC registers
+}
+
+
 /////////////////////////// System call 5 ///////////////////////////
 
 void Nachos_Open() {
@@ -472,6 +502,8 @@ ExceptionHandler(ExceptionType which)
           break;
         case SC_Create:               // System call # 4
           // Código de create
+          printf("--- Case SC_Create ---\n");
+          Nachos_Create();
           break;
         case SC_Open:                 // System call # 5
           printf("--- Case SC_Open ---\n");
