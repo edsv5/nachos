@@ -116,8 +116,7 @@ void Nachos_Create(){
 	if(result){
 		DEBUG('p', "Archivo %s creado\n", filename);
 	}else{
-		DEBUG('p', "
-		Error al crear archivo\n");
+		DEBUG('p', "Error al crear archivo\n");
 	}
 	returnFromSystemCall();		// Update the PC registers
 }
@@ -403,17 +402,19 @@ void Nachos_SemCreate(){
   // initval. Insertaen cantidadSemaforosNachos porque es el índice del semáforo,
   // con initval porque es el valor ingresado en el parámetro
   //
-  // Recuerde: mapSemaforosNachos está en system.h
+  // NOTE: mapSemaforosNachos está en system.h
 
-  mapSemaforosNachos->insert(std::pair<int,int>(cantidadSemaforosNachos,initval));
+  //mapSemaforosNachos->insert(std::pair<int,int>(cantidadSemaforosNachos,initval));
 
   //TODO: Preguntar esto
+
   // CAMBIO, ahora se inserta en el mapa un semáforo asociado a un índice
-  //Semaphore* nuevoSem = new Semaphore("SemNuevo", initval);	// Crea un semáfoto con el initval especificado
+  
+  Semaphore* nuevoSem = new Semaphore("SemNuevo", initval);	// Crea un semáfoto con el initval especificado
 
   // Inserta en el mapa de semáforos
 
-  //mapSemaforosNachos->insert(std::pair<int,Semaphore*>(cantidadSemaforosNachos,nuevoSem));
+  mapSemaforosNachos->insert(std::pair<int,Semaphore*>(cantidadSemaforosNachos,nuevoSem));
 
   // Retorna en registro 2 el índice del semáforo recién creado
 
