@@ -13,8 +13,8 @@
 
 NachosOpenFilesTable::NachosOpenFilesTable(){
 
-    openFiles = new int[5]; // 5 archivos abiertos como máximo, Inicializamos
-    for(int i=0; i < 5; i++)
+    openFiles = new int[15]; // 15 archivos abiertos como máximo, Inicializamos
+    for(int i=0; i < 15; i++)
     {
 	     openFiles[i] = 0;
     }

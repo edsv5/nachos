@@ -233,8 +233,6 @@ void Nachos_Open() {
 
 void Nachos_Read() {
 
-  printf("Entrando a Nachos_Read... \n");
-
   int bufferAddr = machine->ReadRegister( 4 ); // Lee la dirección del buffer que se quiere leer
   int size = machine->ReadRegister( 5 ); // Tamaño del archivo por leer
   OpenFileId descriptorFile = machine->ReadRegister( 6 ); // Id del file que se quiere leer
@@ -274,10 +272,15 @@ void Nachos_Read() {
 
 		default: // Cualquier otro caso es que se lee de un archivo
 
+      /* ************************** MÉTODO A ************************** TODO: Preguntar por qué se sale del vector?
+
+
       // Si el thread actual, en su addrspace tiene un archivo abierto en su tabla de archivos abiertos
       int idDelThreadActual = currentThread->getIdThread(); // Para claridad del código
       int bytesLeidos = 0; // Va a almacenar los bytes que leemos, si es que leemos
-      if(currentThread->space->openFilesTable->isOpened(descriptorFile, idDelThreadActual ))
+      bool archivoEstaAbierto = currentThread->space->openFilesTable->isOpened(descriptorFile, idDelThreadActual);
+
+      if(archivoEstaAbierto)
       {
         //Obtenemos el file handle de UNIX para usar los llamados de UNIX
 
@@ -301,9 +304,32 @@ void Nachos_Read() {
         // Devuelve al final, la cantidad de bytes que se leyeron
         machine->WriteRegister(2,bytesLeidos);
 
-      break;
+
       }
+
+      */
+
+      // ************************** MÉTODO B **************************
+
+
+      int bytesLeidos = read(descriptorFile, buffer, size);
+      int escrito = 0;
+
+      // En este ciclo escribe los datos en memoria principal
+
+      for(int i = 0; i < size; i++){
+
+        escrito = buffer[i];
+        machine->WriteMem(bufferAddr + i, 1, escrito); // Va escribiendo byte por byte
+      }
+
+      machine->WriteRegister(2,bytesLeidos);
+
+      break;
     }
+
+    returnFromSystemCall();
+
   // Fin
 }
 
@@ -323,12 +349,6 @@ void Nachos_Write() {
 //		 OpenFileId id	// Register 6
 //	);
 
-  printf("Entrando a Nachos_Write\n ");
-
-  //TODO: Preguntar por qué da undefined reference al tratar de jalar
-  //esta variable global
-
-  //extern NachosOpenFilesTable* openFilesTable; // Se trae la variable global
 
   // Lee parámetros de los registros
 
@@ -365,10 +385,10 @@ void Nachos_Write() {
 			break;
 		case  ConsoleError:
     case  ConsoleOutput: // Ambos casos se contemplan en 1
-      printf("Escribiendo en consola... \n");
-      printf("--------------------------------------\n\n");
+      printf("\nEscribiendo en consola... \n");
+      printf("--------------------------------------\n");
       printf( "%s \n", buffer );
-      printf("--------------------------------------\n\n");
+      printf("--------------------------------------\n");
       machine->WriteRegister( 2, tamBuf ); // Devuelve la cantidad de bytes escritos
 		  break;
 		/*case ConsoleError:	// This trick permits to write integers to console
@@ -376,29 +396,56 @@ void Nachos_Write() {
 			break; */
 		default:
 
-      //TODO: Declarar la tabla de archivos abiertos en Thread para que haya una tabla por hilo
-      //if(openFilesTable -> isOpened(descriptorFile)){ // Si el archivo ya está abierto
-
-      //Utiliza el write de UNIX para escribir el file
-      int w = write(descriptorFile, buffer, tamBuf);
-      //}
-
-
-
-      //OpenFile* file = openFiles[descriptorFile]; // Crea un nuevo archivo en el id correspondiente
-      //file->Write(buffer, tamBuf);
-
-      // Utilizar llamados de UNIX
-      // Verificar que hay un descriptor en el bitmap de NachosOpenFilesTable
-      // y si lo hay, escribir en el archivo correspondiente
-
-      machine->WriteRegister( 2, tamBuf ); // Devuelve la cantidad de bytes escritos en el file
-
       // All other opened files
-			// Verify if the file is opened, if not return -1 in r2
-			// Get the unix handle from our table for open files
-			// Do the write to the already opened Unix file
-			// Return the number of chars written to user, via r2
+      // Verify if the file is opened, if not return -1 in r2
+      // Get the unix handle from our table for open files
+      // Do the write to the already opened Unix file
+      // Return the number of chars written to user, via r2
+
+      // ************************** MÉTODO A ************************** TODO: Preguntar por qué se sale del vector?
+
+      // Se recupera el id del thread para mayor claridad
+
+      /*
+
+      int idDelThreadActual = currentThread->getIdThread();
+      bool archivoEstaAbierto = currentThread->space->openFilesTable->isOpened(descriptorFile, idDelThreadActual);
+
+      //printf("idDelThreadActual: %d \n", idDelThreadActual);
+      printf("Archivo abierto?: %d \n", archivoEstaAbierto);
+
+
+      // "Verify if the file is opened, if not return -1 in r2"
+      if(archivoEstaAbierto)
+      {
+        printf("Escribiendo en el archivo \n");
+        //Obtenemos el file handle de UNIX para usar los llamados de UNIX
+        // "Get the unix handle from our table for open files"
+        // TODO: Por alguna razón, no está escribiendo el file
+        // int fileHandle = currentThread->space->openFilesTable->getUnixHandle(descriptorFile, idDelThreadActual );
+
+        // Se utiliza el write de UNIX para escribir el buffer al file descrito por el handle que
+        // acabamos de obtener, tamBuf es la cantidad de bytes que escribe en el file
+
+        // "Do the write to the already opened Unix file"
+        write(descriptorFile ,buffer, tamBuf);
+
+        // "Return the number of chars written to user, via r2"
+        machine->WriteRegister( 2, tamBuf );
+
+      }else{
+        machine->WriteRegister( 2, -1 ); // Error
+        printf("El archivo no está abierto \n");
+      }
+
+      printf("Se escribió en el archivo \n");
+
+      */
+
+      // ************************** MÉTODO B **************************
+
+      write(descriptorFile, buffer, tamBuf);
+      machine->WriteRegister( 2, tamBuf ); // Devuelve la cantidad de bytes escritos
 
 			break;
 

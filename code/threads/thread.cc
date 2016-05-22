@@ -38,11 +38,11 @@ Thread::Thread(const char* threadName)
     stackTop = NULL;
     stack = NULL;
     status = JUST_CREATED;
-    
+
     // Nuevo: Inicialización de contador
 
     archivosAbiertosPorThread = 0;
-    idThread = -1; // El ID del thread empieza en -1
+    idThread = 0; // El ID del thread empieza en -1
 
 #ifdef USER_PROGRAM
     space = NULL;

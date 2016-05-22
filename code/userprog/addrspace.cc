@@ -115,7 +115,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
   numPages = divRoundUp(size, PageSize);
   size = numPages * PageSize;
 
-	printf("Tamaño del page: %d\n",PageSize );
+	//printf("Tamaño del page: %d\n",PageSize );
 
 	//tamaño del proceso = tamaño del address space
 	//printf("El tamaño del address space es %d \n", size);

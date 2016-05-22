@@ -23,6 +23,7 @@ class NachosOpenFilesTable {
   private:
     int * openFiles;		// A vector with user opened files
     //BitMap * openFilesMap;	// A bitmap to control our vector, sólo funciona sin multiprogramación
+    
     // Para controlar todos los threads a la vez, se utiliza un vector de bitmaps, cada espacio del vector
     // es un thread diferente, cada thread tiene entonces, su propio bitmap
     vector<BitMap*> *vecMapsOpenFiles;
