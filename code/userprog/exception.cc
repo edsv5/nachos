@@ -200,14 +200,26 @@ void Nachos_Open() {
   // Open de UNIX, O_APPEND porque queremos attachearle cosas ya que estamos abriéndolo
   fileId = open(nombreFile,O_RDWR | O_APPEND);
 
-  // Devuelve el fid correspondiente
-
-  machine->WriteRegister(2,fileId);
-
   // Read the name from the user memory, see 4 below
 	// Use NachosOpenFilesTable class to create a relationship
 	// between user file and unix file
 	// Verify for errors
+
+	// Se hace conversión de UNIX handle a NachOS handle y se asigna al thread actual
+  // printf("FILEID: %d\n", fileId);
+  // printf("AAPT: %d\n", currentThread->getArchivosAbiertosPorThread());
+
+
+  if(fileId != -1)
+	{
+    //fileId = currentThread->space->openFilesTable->Open(fileId,currentThread->getArchivosAbiertosPorThread()); // currentThread->getOpenFilesID()
+	}
+
+  // Devuelve el fid correspondiente
+
+  machine->WriteRegister(2,fileId);
+
+
 
   returnFromSystemCall();		// Update the PC registers
 
