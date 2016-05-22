@@ -295,15 +295,12 @@ void Nachos_Read() {
           escrito = buffer[i];
           machine->WriteMem(bufferAddr + i, 1, escrito); // Va leyendo byte por byte
         }
+
         // Al final de la cadena, escribe un 0 para señalar que es el final de la cadena
         machine->WriteMem(bufferAddr+size,1,0);
         // Devuelve al final, la cantidad de bytes que se leyeron
         machine->WriteRegister(2,bytesLeidos);
 
-      // TODO: Cómo se hace esto? Debería accesar la tabla de archivos abiertos
-      // y declararla de manera global? O cada thread debería tener su propia tabla?
-      // Usar read de UNIX?
-      // Usar WriteMem para escribir en memoria, eso sí de fijo
       break;
       }
     }
@@ -402,6 +399,7 @@ void Nachos_Write() {
 			// Get the unix handle from our table for open files
 			// Do the write to the already opened Unix file
 			// Return the number of chars written to user, via r2
+
 			break;
 
 	}
