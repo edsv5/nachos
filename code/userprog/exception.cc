@@ -107,6 +107,16 @@ void Nachos_Exec(){
 
 
 /////////////////////////// System call 4 ///////////////////////////
+/* ---  Nachos_Read ---
+ *
+ * Esto recibe en el registro 4 el nombre del archivo que se quiere leer.
+ * Se hace una traducción del nombre de este archivo con la función
+ * ReadMem y se asigna dicha traducción, caracter por caracter, al arreglo
+ * nombreFile, después de que este arreglo está completo, se utiliza la
+ * función de UNIX creat, con el nombre del archivo que traducimos
+ * y los permisos necesarios para poder hacerle read y write al archivo
+ *
+ */
 void Nachos_Create(){
 
 
@@ -143,7 +153,16 @@ void Nachos_Create(){
 
 
 /////////////////////////// System call 5 ///////////////////////////
-
+/* ---  Nachos_Open ---
+ *
+ * Esto recibe en el registro 4 el nombre del archivo que se quiere abrir.
+ * Se hace una traducción del nombre de este archivo con la función
+ * ReadMem y se asigna dicha traducción, caracter por caracter, al arreglo
+ * nombreFile, después de que este arreglo está completo, se utiliza la
+ * función de UNIX open, con el nombre del archivo que traducimos
+ * y las banderas necesarias para poder crear el archivo.
+ * Devuelve el Unix handle del archivo nuevo.
+ */
 void Nachos_Open() {
   /* System call definition described to user
   	int Open(
