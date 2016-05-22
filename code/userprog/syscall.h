@@ -22,17 +22,17 @@
 #define SC_Exit		1 // Listo con hilos
 #define SC_Exec		2
 #define SC_Join		3
-#define SC_Create	4 // Listo (?)
-#define SC_Open		5 // 1/2 Listo
-#define SC_Read		6 // Listo con hilos (?)
-#define SC_Write	7 // Listo (?)
+#define SC_Create	4 // Listo
+#define SC_Open		5 // Listo (falta multiprog)
+#define SC_Read		6 // Listo (falta multiprog)
+#define SC_Write	7 // Listo (falta multiprog)
 #define SC_Close	8
 #define SC_Fork		9
 #define SC_Yield	10
-#define SC_SemCreate	11 // Listo (?)
-#define SC_SemDestroy	12 // Listo (?)
-#define SC_SemSignal	13 // Listo (?)
-#define SC_SemWait	14 // Listo (?)
+#define SC_SemCreate	11 // Listo (falta resolver duda sobre segfault)
+#define SC_SemDestroy	12 // Listo (falta resolver duda sobre segfault)
+#define SC_SemSignal	13 // Listo (falta resolver duda sobre segfault)
+#define SC_SemWait	14 // Listo (falta resolver duda sobre segfault)
 
 #ifndef IN_ASM
 

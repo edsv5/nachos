@@ -501,9 +501,8 @@ void Nachos_Yield(){
 
 // TODO: Por ahora, sólo controla la estructura que dice cuántos semáforos hay
 // Averiguar cómo involucrarlos verdaderamente
+
 void Nachos_SemCreate(){
-
-
 
   printf("Entrando a SemCreate\n");
 
