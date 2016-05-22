@@ -201,6 +201,14 @@ Initialize(int argc, char **argv)
     machine = new Machine(debugUserProg);	// this must come first
 #endif
 
+// Nuevo: inicializa cantidad de semáforos en 0
+
+cantidadSemaforosNachos = 0;
+
+// Inicializa mapa de semáforos
+
+// mapSemaforosNachos = new std::map<int,Semaphore* >();
+
 #ifdef FILESYS
     synchDisk = new SynchDisk("DISK");
 #endif

@@ -38,6 +38,7 @@ Thread::Thread(const char* threadName)
     stackTop = NULL;
     stack = NULL;
     status = JUST_CREATED;
+    
     // Nuevo: Inicialización de contador
 
     archivosAbiertosPorThread = 0;

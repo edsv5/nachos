@@ -90,34 +90,54 @@ void Nachos_Halt() {
 }       // Nachos_Halt
 
 
+
 /////////////////////////// System call 1 ///////////////////////////
 
 // Implementado en el case de abajo
 
 
+/////////////////////////// System call 2 ///////////////////////////
+
+
+void Nachos_Exec(){
+
+  returnFromSystemCall();		// Update the PC registers
+
+}
+
+
 /////////////////////////// System call 4 ///////////////////////////
 void Nachos_Create(){
-	//Recupera el primer parametro (direccion en memoria)
-	int filePtr = machine->ReadRegister(4);
-	//Recupera el nombre del archivo de la memoria
-	char* filename = &machine->mainMemory[filePtr];
-	//si el nombre ese nulo
-	if(filename = NULL){
-		DEBUG('p', "No hay nombre de archivo en la memoria\n");
+
+
+  // Dirección del archivo que se va a crear
+  int nombreIngresado = machine->ReadRegister( 4 );
+  // Aquí se va a guardar la traduccion del nombre
+  char nombreFile [50];
+  // Para detener la traduccion
+  bool llegoAlfinal = false;
+  // Cada char se guarda acá antes de asignárselo a nombreFile[i]
+  int traduccion = 0;
+  // Para que vaya iterando sobre el nombre
+  int indice = 0;
+  // Llamo a ReadMem para que traduzca
+  while(!llegoAlfinal)
+	{
+		machine->ReadMem(nombreIngresado+indice,1,&traduccion);
+    nombreFile[indice] = traduccion;
+
+    // El final del nombre es un 0 (UNIX)
+		if(traduccion == 0){
+      llegoAlfinal = true;
+    }
+
+		indice++; // Sigue con la siguiente posicion del nombre
 	}
-	//si el nombre tiene tamaño 0
-	if(strlen(filename) == 0){
-		DEBUG('p', "Nombre del archivo tiene tamaño 0\n");
-	}
-	DEBUG('p', "Creando archivo\n");
-	//Crea el archivo
-	bool result = fileSystem->Create(filename, 100);
-	//Verifica si se creo el archivo
-	if(result){
-		DEBUG('p', "Archivo %s creado\n", filename);
-	}else{
-		DEBUG('p', "Error al crear archivo\n");
-	}
+
+  // Se utiliza el creat de UNIX
+
+	creat(nombreFile,0777);
+
 	returnFromSystemCall();		// Update the PC registers
 }
 
@@ -131,34 +151,39 @@ void Nachos_Open() {
   	);
   */
 
-  // Dirección del archivo que se va a abrir
-  int direccionFile = machine->ReadRegister( 4 );
+  // Dirección del archivo que se va a crear
+  int nombreIngresado = machine->ReadRegister( 4 );
+  // Aquí se va a guardar la traduccion del nombre
+  char nombreFile [50];
+  // Para detener la traduccion
+  bool llegoAlfinal = false;
+  // Cada char se guarda acá antes de asignárselo a nombreFile[i]
+  int traduccion = 0;
+  // Para que vaya iterando sobre el nombre
+  int indice = 0;
+  // Llamo a ReadMem para que traduzca
+  while(!llegoAlfinal)
+	{
+		machine->ReadMem(nombreIngresado+indice,1,&traduccion);
+    nombreFile[indice] = traduccion;
+
+    // El final del nombre es un 0 (UNIX)
+		if(traduccion == 0){
+      llegoAlfinal = true;
+    }
+
+		indice++; // Sigue con la siguiente posicion del nombre
+	}
+
   // Inicializa el descriptor del nuevo file
-  OpenFileId fid = 0;
-  // Nombre del file nuevo
-  char nombreFile[50];
-  // Cada char se guarda acá en el for antes de asignárselo a buffer[i]
-  int traduccion;
+  OpenFileId fileId = 0;
 
-  // Llamo a ReadMem para que lea el file
-
-  for(int i = 0; traduccion == 0; i++){ // Repite hasta llegar al final
-
-    // Se le va sumando 1 a bufIngresado para que siga leyendo
-    machine->ReadMem(direccionFile + i, 1, &traduccion);
-    // Va leyendo byte por byte, asignando a nombreFile
-    nombreFile[i] = traduccion;
-  }
-
-
-  // Se usa el open de UNIX
-  // bandera O_APPEND para poder attachear cosas al file descriptor nuevo
-  fid = open(nombreFile,O_RDWR | O_APPEND);
+  // Open de UNIX, O_APPEND porque queremos attachearle cosas ya que estamos abriéndolo
+  fileId = open(nombreFile,O_RDWR | O_APPEND);
 
   // Devuelve el fid correspondiente
 
-
-  machine->WriteRegister(2,fid);
+  machine->WriteRegister(2,fileId);
 
   // Read the name from the user memory, see 4 below
 	// Use NachosOpenFilesTable class to create a relationship
@@ -374,6 +399,31 @@ void Nachos_Write() {
 }  // Nachos_Write
 
 
+/////////////////////////// System call 8 ///////////////////////////
+
+void Nachos_Close(){
+
+  returnFromSystemCall();		// Update the PC registers
+
+}
+
+/////////////////////////// System call 9 ///////////////////////////
+
+
+void Nachos_Fork(){
+
+
+}
+
+/////////////////////////// System call 10 ///////////////////////////
+
+
+void Nachos_Yield(){
+
+}
+
+
+
 /////////////////////////// System call 11 ///////////////////////////
 
 /* ---  Nachos_SemCreate ---
@@ -388,6 +438,8 @@ void Nachos_Write() {
 // TODO: Por ahora, sólo controla la estructura que dice cuántos semáforos hay
 // Averiguar cómo involucrarlos verdaderamente
 void Nachos_SemCreate(){
+
+
 
   printf("Entrando a SemCreate\n");
 
@@ -427,6 +479,8 @@ void Nachos_SemCreate(){
 
   returnFromSystemCall();
 
+
+
 }
 
 /////////////////////////// System call 12 ///////////////////////////
@@ -459,6 +513,8 @@ void Nachos_SemDestroy(){
   }
 
   returnFromSystemCall();
+
+
 }
 
 /////////////////////////// System call 13 ///////////////////////////
@@ -470,10 +526,21 @@ void Nachos_SemDestroy(){
 
 void Nachos_SemSignal(){
 
-  // TODO: Preguntar cómo hacer esto, utilizo los semáforos de NachOS y
-  // pongo a esperar al semáforo correspondiente? Cómo hago eso si el constructor
-  // de semáforo de NachOS no tiene id como parámetro. Los semáforos aún así son
-  // identificables?
+  // TODO: Preguntar si esto está bien
+
+
+  int semId = machine->ReadRegister(4); // Saca el parámetro del registro
+
+	if(mapSemaforosNachos->at(semId) != NULL ) // Si el semáforo existe
+	{
+    mapSemaforosNachos->at(semId)-> V(); // le da signal
+		machine->WriteRegister(2,0); // Retorna exitoso
+	}else{
+    machine->WriteRegister(2,-1); // Retorna sin éxito
+  }
+
+
+  returnFromSystemCall();
 
 }
 
@@ -486,7 +553,21 @@ void Nachos_SemSignal(){
 
 void Nachos_SemWait(){
 
-  // TODO: Preguntar CÓMO
+  // TODO: Preguntar si esto está bien
+
+
+  int semId = machine->ReadRegister(4); // Saca el parámetro del registro
+
+	if(mapSemaforosNachos->at(semId) != NULL ) // Si el semáforo existe
+	{
+    mapSemaforosNachos->at(semId)-> P(); // Pone a esperar al semáforo correspondiente
+		machine->WriteRegister(2,0); // Retorna exitoso
+	}else{
+    machine->WriteRegister(2,-1); // Retorna sin éxito
+  }
+
+
+  returnFromSystemCall();
 
 }
 
@@ -495,7 +576,6 @@ void
 ExceptionHandler(ExceptionType which)
 {
   int type = machine->ReadRegister(2); // Lee cual syscall es, en el R2 se encuentra esta informacion
-
 
   switch ( which ) {
     case SyscallException:
@@ -508,17 +588,18 @@ ExceptionHandler(ExceptionType which)
           currentThread->Finish();    // Finaliza el thread actual
           break;
         case SC_Exec:                 // System call # 2
-          printf("--- SC_Exec ---\n");
+          printf("--- SC_Exec ---\n");                      // FALTA
+          Nachos_Exec();
           break;
         case SC_Join:                 // System call # 3
-          printf("--- SC_Join ---\n");
+          printf("--- SC_Join ---\n");                      // FALTA
           break;
         case SC_Create:               // System call # 4
           printf("--- SC_Create ---\n");
           Nachos_Create();
           break;
         case SC_Open:                 // System call # 5
-          printf("--- SC_Open ---\n");
+          printf("--- SC_Open ---\n");                      // FALTA TERMINAR
           Nachos_Open();
           break;
         case SC_Read:                 // System call # 6
@@ -530,13 +611,16 @@ ExceptionHandler(ExceptionType which)
           Nachos_Write();
           break;
         case SC_Close:                // System call # 8
-          printf("--- SC_Close ---\n");
+          printf("--- SC_Close ---\n");                      // FALTA
+          Nachos_Close();
           break;
         case SC_Fork:                 // System call # 9
-          printf("--- SC_Fork ---\n");
+          printf("--- SC_Fork ---\n");                      // FALTA
+          Nachos_Fork();
           break;
         case SC_Yield:                // System call # 10
-          printf("--- SC_Yield ---\n");
+          printf("--- SC_Yield ---\n");                      // FALTA
+          Nachos_Yield();
           break;
         case SC_SemCreate:            // System call # 11
           printf("--- SC_SemCreate ---\n");
