@@ -61,6 +61,52 @@ void returnFromSystemCall() {
 }       // returnFromSystemCall
 
 
+
+
+
+//---------------------------NUEVO----------------------------------------
+
+void NachosForkThread(void* funcPtr){ //parametro es la direccion de la funcion que se va a correr en el nuevo Thread
+	//DEBUG
+  DEBUG('t', "Estableciendo registros para hilo %s: 0x%x...\n", currentThread->getName(), funcPtr);  
+  //AddrSpace actual
+  AddrSpace* space = currentThread->space;
+  //Inicializa registros y reestablece el estado delthread
+  space->InitRegisters();
+  space->RestoreState();
+  
+  
+  //valor de retorno (syscall 4 - Exit por si falla el llamado)
+  machine->WriteRegister(RetAddrReg, 4);
+  //cast a int para meterlo a un registro
+  int x = *((int*)(&funcPtr));
+  //proxima instruccion a ejecutar
+  machine->WriteRegister(PCReg, (long)funcPtr);
+  //instruccion que sigue
+  machine->WriteRegister(NextPCReg, x+4);  
+								
+								
+	//ERRORES QUE ME ESTABAN DANDO
+  //printf("PageFaultException: %d (PageFaultException: No valid translation found)\n", PageFaultException);
+  //printf("AddressErrorException: %d (AddressErrorException: Unaligned reference or one that was beyond the end of the address space)\n", AddressErrorException);
+  
+  
+  printf("\n");   
+	//corre el programa
+  machine->Run();    
+  //no ocupa volver del system call (ReturnFrom...)
+  ASSERT(false);          //no se para que es
+}
+
+
+//------------------------------------------------------------------------
+
+
+
+
+
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 /*
@@ -509,16 +555,32 @@ void Nachos_Close(){
 /////////////////////////// System call 9 ///////////////////////////
 
 
-void Nachos_Fork(){
-
-
+void Nachos_Fork(){  		//NUEVO
+DEBUG( 'u', "Entering Fork System call\n" );  //DEBUG
+	//Crea un nuevo Thread
+	Thread * newT = new Thread( "child to execute Fork code" );
+	//Crea Addrspace para el thread, constructor asigna espacio al stack
+	//copia variables compartidas (tabla de archivos abiertos, addrspace original, numPages+stack)
+	newT->openFilesTable = currentThread->openFilesTable;
+	
+	newT->space = new AddrSpace( currentThread->space );
+	//Llama al Fork
+	newT->Fork( NachosForkThread, (void*)machine->ReadRegister( 4 ) );  //cast to pointer from integer of different size
+	// Llama Yield
+	currentThread->Yield();
+	//incrementa PC
+	returnFromSystemCall();	// This adjust the PrevPC, PC, and NextPC 
+	
+	DEBUG( 'u', "Exiting Fork System call\n" );		//DEBUG	
 }
 
 /////////////////////////// System call 10 ///////////////////////////
 
 
-void Nachos_Yield(){
-
+void Nachos_Yield(){		//NUEVO
+	DEBUG('p', "%s esta cediendo\n", currentThread->getName());
+  currentThread->Yield();
+  machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
 }
 
 
