@@ -208,17 +208,16 @@ void Nachos_Open() {
 	// Se hace conversión de UNIX handle a NachOS handle y se asigna al thread actual
   // printf("FILEID: %d\n", fileId);
   // printf("AAPT: %d\n", currentThread->getArchivosAbiertosPorThread());
-
-
-  if(fileId != -1)
-	{
+  if(fileId == -1){ // Si el archivo no existe, no hace nada
+    printf("El archivo '%s' no existe.\n", nombreFile);
+  }else{ // Pero si existe, lo abre
+    printf("Archivo '%s' abierto.\n", nombreFile);
     //fileId = currentThread->space->openFilesTable->Open(fileId,currentThread->getArchivosAbiertosPorThread()); // currentThread->getOpenFilesID()
-	}
+  }
 
   // Devuelve el fid correspondiente
 
   machine->WriteRegister(2,fileId);
-
 
 
   returnFromSystemCall();		// Update the PC registers
@@ -476,9 +475,33 @@ void Nachos_Write() {
 
 
 /////////////////////////// System call 8 ///////////////////////////
+/* ---  Nachos_Close ---
+ *
+ * Close the file, we're done reading and writing to it.
+ *
+ *
+ *
+ * Close(OpenFileId id);
+ */
+
 
 void Nachos_Close(){
 
+  /*
+  OpenFileId idFile = machine->ReadRegister(4); // Lee el id del file que queremos cerrar
+
+  int idDelThreadActual = currentThread->getArchivosAbiertosPorThread();
+  bool archivoEstaAbierto = currentThread->space->openFilesTable->isOpened(descriptorFile, idDelThreadActual);
+
+  if (archivoEstaAbierto) {
+
+    // currentThread->space->openFilesTable->openFiles[] isOpened(descriptorFile, idDelThreadActual);
+
+    delete openFileTable[fid - FID_OFFSET];
+    fileCounter--; // bug here - not necessarily the next file id...
+    return true;
+
+  */
   returnFromSystemCall();		// Update the PC registers
 
 }
