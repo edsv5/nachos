@@ -13,18 +13,30 @@
 
 NachosOpenFilesTable::NachosOpenFilesTable(){
 
-    openFiles = new int[15]; // 15 archivos abiertos como máximo, Inicializamos
-    for(int i=0; i < 15; i++)
+    openFiles = new int[limiteDeArchivosAbiertos]; // 15 archivos abiertos como máximo, Inicializamos
+
+    // Empieza en 2 por que el 0 y el 1 son de la consola
+    for(int i=0; i < limiteDeArchivosAbiertos; i++)
     {
-	     openFiles[i] = -1;
+	     openFiles[i] = -1; // Los espacios en -1 es que están disponibles
     }
 
     // vecMapsOpenFiles = new vector<BitMap*>; // Inicializamos el vector de bitmaps
-    openFilesMap = new BitMap(32);
+    openFilesMap = new BitMap(limiteDeArchivosAbiertos); // bitmap de 15 bits, uno por cada archivo que se puede abrir
+
+    // Marca como ocupados los bits de la consola (Console Input, Console Output)
+
+    openFilesMap->Mark(0);
+    openFilesMap->Mark(1);
+
+
     usage = 0; // Inicia en 0
 
-    //openFiles[0] = 0;
-    //openFiles[1] =1;
+    // El archivo 0 y 1 se dejan abiertos siempre para que no interfiera con el Console Input
+    // o Console Output, los cuales valen 0 y 1, respectivamente
+
+    openFiles[0] = 0;
+    openFiles[1] = 1;
 
 }
 
@@ -32,7 +44,7 @@ NachosOpenFilesTable::NachosOpenFilesTable(){
  * Este método revisa el bitmap de archivos abiertos, si el archivo está abierto
  * lo reabre y asigna el handle a el mismo archivo, si no está abierto, inserta en el
  * bitmap un 1 correspondiente al archivo abierto y un handle en el vector de archivos
- * abiertos. Al final devuelve el handle del archivo recién abierto.
+ * abiertos. Al final devuelve el NachOS handle del archivo recién abierto.
  *
  */
 
@@ -82,8 +94,9 @@ int NachosOpenFilesTable::Open(int UnixHandle, int idThread)
     }
 		else //Si el espacio está ocupado, se le hace clear y se devuelve -1
 		{
-			openFilesMap->Clear(handle);
-			handle = -1;
+      printf("handle: %d", handle);
+			// openFilesMap->Clear(handle);
+			// handle = -1;
 		}
 	}
 
@@ -91,6 +104,23 @@ int NachosOpenFilesTable::Open(int UnixHandle, int idThread)
   //openFilesMap->Print();
 
   return handle;
+}
+
+// Este método retorna el UNIX handle del archivo recién cerrado
+
+int NachosOpenFilesTable::Close(int NachosHandle)
+{
+  // Si el archivo está abierto, busca en el bitmap, en el índice del archivo, le da clear
+
+  if( isOpened(NachosHandle) ){
+    int handleUnix = getUnixHandle(NachosHandle); // Traduce el handle de NachOS a handle de UNIX para retornarlo
+    openFilesMap->Clear(NachosHandle); // Pone el bit en 0, ya que se está cerrando
+    openFiles[NachosHandle] = -1; // Libera el espacio, pone -1 en el vector de archivos abiertos
+    return handleUnix; // Retorna el handle de UNIX para cerrarlo en UNIX
+  }else{ // Si el archivo no está abierto
+    return -1; // Devuelve -1
+  }
+
 }
 
 /*

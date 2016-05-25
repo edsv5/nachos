@@ -104,31 +104,6 @@ void NachosForkThread(void* funcPtr){ //parametro es la direccion de la funcion 
 }
 
 
-//------------------------------------------------------------------------
-
-
-
-
-
-
-
-///////////////////////////////////////////////////////////////////////////////
-
-/*
-void
-ExceptionHandler(ExceptionType which)
-{
-    int type = machine->ReadRegister(2); //Lee el contenido de la interrupcion
-
-    if ((which == SyscallException) && (type == SC_Halt)) {
-	DEBUG('a', "Shutdown, initiated by user program.\n");
-   	interrupt->Halt();
-    } else {
-	printf("Unexpected user mode exception %d %d\n", which, type);
-	ASSERT(false);
-    }
-} */
-
 //-------------------- VERSIÓN CORREGIDA --------------------//
 
 /////////////////////////// System call 0 ///////////////////////////
@@ -158,6 +133,7 @@ void Nachos_Exec(){
 
 
 /////////////////////////// System call 4 ///////////////////////////
+
 /* ---  Nachos_Read ---
  *
  * Esto recibe en el registro 4 el nombre del archivo que se quiere leer.
@@ -198,6 +174,7 @@ void Nachos_Create(){
   // Se utiliza el creat de UNIX
 
 	creat(nombreFile,0777);
+  printf("Archivo '%s' creado.\n", nombreFile );
 
 	returnFromSystemCall();		// Update the PC registers
 }
@@ -395,6 +372,8 @@ void Nachos_Write() {
   int tamBuf = machine->ReadRegister(5);
   OpenFileId descriptorFile = machine->ReadRegister(6);
 
+  printf("Descriptor del archivo: %d\n", descriptorFile );
+
   //Crea el buffer en el que va a guardar la traducción que lee de memoria de usuario
 
   char buffer[tamBuf];
@@ -419,10 +398,11 @@ void Nachos_Write() {
 
 	switch (descriptorFile) {
 		case  ConsoleInput:	// El usuario no puede escribir al input de la consola
+      // Console Input = 0
 			machine->WriteRegister( 2, -1 );
       printf("No puede escribir en el input de la consola. \n ");
 			break;
-		case  ConsoleError:
+		//case  ConsoleError:
     case  ConsoleOutput: // Ambos casos se contemplan en 1
       printf("\nEscribiendo en consola... \n");
       printf("--------------------------------------\n");
@@ -438,17 +418,21 @@ void Nachos_Write() {
       // Do the write to the already opened Unix file
       // Return the number of chars written to user, via r2
       //********* LISTO *********
+      printf("Escribiendo en archivo %d ... \n", descriptorFile);
 
       bool archivoEstaAbierto = currentThread->space->openFilesTable->isOpened(descriptorFile);
 
       if(archivoEstaAbierto){
 
         //Obtenemos el file handle de UNIX para usar los llamados de UNIX
-        int fileHandle = currentThread->space->openFilesTable->getUnixHandle(descriptorFile);
+        int unixFileHandle = currentThread->space->openFilesTable->getUnixHandle(descriptorFile);
         // Se escribe utilizando el read de UNIX
-        write(descriptorFile, buffer, tamBuf);
+        //write(descriptorFile, buffer, tamBuf);
+        write(unixFileHandle, buffer, tamBuf);
         // Devuelve al final, la cantidad de bytes que se leyeron
         machine->WriteRegister(2,tamBuf);
+
+        printf("Escritos %d bytes en archivo %d (UNIX) con éxito.\n", tamBuf, unixFileHandle );
 
       }else{
 
@@ -469,8 +453,8 @@ void Nachos_Write() {
 /////////////////////////// System call 8 ///////////////////////////
 /* ---  Nachos_Close ---
  *
- * Close the file, we're done reading and writing to it.
- *
+ * Recibe un handle de Nachos para cerrar el archivo, se hace la conversión a UNIX handle
+ * y se cierra también en UNIX.
  *
  *
  * Close(OpenFileId id);
@@ -479,49 +463,26 @@ void Nachos_Write() {
 
 void Nachos_Close(){
 
-  /*
-  OpenFileId idFile = machine->ReadRegister(4); // Lee el id del file que queremos cerrar
 
-  int idDelThreadActual = currentThread->getArchivosAbiertosPorThread();
-  bool archivoEstaAbierto = currentThread->space->openFilesTable->isOpened(descriptorFile, idDelThreadActual);
+  OpenFileId descriptorFile = machine->ReadRegister(4); // Lee el id del file que queremos cerrar
+  bool archivoEstaAbierto = currentThread->space->openFilesTable->isOpened(descriptorFile);
+
+  // Primero pregunta si el archivo está abierto, si está abierto, utiliza el close de UNIX para cerrar el
+  // archivo, luego hace las actualizaciones correspondientes en el bitmap de archivos abiertos
+  // y el vector de fd's de los archivos abiertos, hace también el close de NachOS
 
   if (archivoEstaAbierto) {
+    // Si está abierto, se hace el close de NachOS
+    int handleUnix = currentThread->space->openFilesTable->Close(descriptorFile);
+    // Se hace después el close de Unix con el handle de UNIX que nos devolvieron
+    // Si da error, avisa
+    if(close(handleUnix) == -1){
+      printf("No se pudo cerrar el archivo %d.\n", handleUnix);
+    }else{
+      printf("Archivo %d cerrado con éxito.\n", handleUnix);
+    }
 
-    // currentThread->space->openFilesTable->openFiles[] isOpened(descriptorFile, idDelThreadActual);
-
-    delete openFileTable[fid - FID_OFFSET];
-    fileCounter--; // bug here - not necessarily the next file id...
-    return true;
-
-  */
-
-  /*
-
-	if(currentThread->space->openFTable->isOpened(fd,currentThread->getOpenFilesID()))//Si está abierto
-	{
-		//Se le pasa un handle o file descriptor de nachos y se obtiene el de UNIX
-		//Si solo un thread estaba utilizando el archivo, se cierra en UNIX, si no,simplemente
-		//se recibe el resultado al borrarlo en la tabla de archivos abiertos
-
-		int id = 0;
-		if((id = currentThread->space->openFTable->Close(fd,currentThread->getOpenFilesID())) > 0)
-		{
-			//Ahora se trata de remover la entrada de la tabla de archivos abiertos
-			if(close(id) == -1)
-			{
-				char errorMC[40] = {"Error on close: unable to close file.\n"};
-				printf("%s",errorMC);
-			}
-		}
-
-	}
-	else//Si no está abierto se devuelve error
-	{
-		char errorMC[29] = {"Error on close: invalid FD.\n"};
-		printf("%s",errorMC);
-	}
-
-  */
+  }
 
   returnFromSystemCall();		// Update the PC registers
 

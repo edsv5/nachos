@@ -12,7 +12,7 @@ class NachosOpenFilesTable {
     ~NachosOpenFilesTable();      // De-allocate
 
     int Open( int UnixHandle, int idThread ); // Register the file handle
-    //int Close( int NachosHandle );      // Unregister the file handle
+    int Close( int NachosHandle );      // Unregister the file handle
     //bool isOpened( int NachosHandle, int idThread );
     bool isOpened( int NachosHandle);
     int getUnixHandle( int NachosHandle); // Devuelve el UNIX handle, según el thread correspondiente y el nachos handle
@@ -29,6 +29,6 @@ class NachosOpenFilesTable {
     // es un thread diferente, cada thread tiene entonces, su propio bitmap
     // vector<BitMap*> *vecMapsOpenFiles; // Por ahora, se comenta esto para usar otra solución
     int usage;			// How many threads are using this table
-    static const int limiteDeArchivosAbiertos = 10; // Cantidad máxima de archivos abiertos por un thread
+    static const int limiteDeArchivosAbiertos = 15; // Cantidad máxima de archivos abiertos por un thread
 
 };
