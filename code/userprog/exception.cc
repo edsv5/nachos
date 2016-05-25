@@ -502,6 +502,35 @@ void Nachos_Close(){
     return true;
 
   */
+
+  /*
+
+	if(currentThread->space->openFTable->isOpened(fd,currentThread->getOpenFilesID()))//Si está abierto
+	{
+		//Se le pasa un handle o file descriptor de nachos y se obtiene el de UNIX
+		//Si solo un thread estaba utilizando el archivo, se cierra en UNIX, si no,simplemente
+		//se recibe el resultado al borrarlo en la tabla de archivos abiertos
+
+		int id = 0;
+		if((id = currentThread->space->openFTable->Close(fd,currentThread->getOpenFilesID())) > 0)
+		{
+			//Ahora se trata de remover la entrada de la tabla de archivos abiertos
+			if(close(id) == -1)
+			{
+				char errorMC[40] = {"Error on close: unable to close file.\n"};
+				printf("%s",errorMC);
+			}
+		}
+
+	}
+	else//Si no está abierto se devuelve error
+	{
+		char errorMC[29] = {"Error on close: invalid FD.\n"};
+		printf("%s",errorMC);
+	}
+  
+  */
+
   returnFromSystemCall();		// Update the PC registers
 
 }
