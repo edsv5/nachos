@@ -147,12 +147,12 @@ class Thread {
 
     AddrSpace *space;			// User code this thread is running.
     
-    
 //--------------NUEVO-------------------------------------------------------
+
     OpenFile* openFilesTable;  //arreglo de archivos abierto por el thread
-    
+
 //--------------------------------------------------------------------------
-    
+
 #endif
 };
 

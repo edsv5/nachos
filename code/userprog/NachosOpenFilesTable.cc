@@ -16,10 +16,11 @@ NachosOpenFilesTable::NachosOpenFilesTable(){
     openFiles = new int[15]; // 15 archivos abiertos como máximo, Inicializamos
     for(int i=0; i < 15; i++)
     {
-	     openFiles[i] = 0;
+	     openFiles[i] = -1;
     }
 
-    vecMapsOpenFiles = new vector<BitMap*>; // Inicializamos el vector de bitmaps
+    // vecMapsOpenFiles = new vector<BitMap*>; // Inicializamos el vector de bitmaps
+    openFilesMap = new BitMap(32);
     usage = 0; // Inicia en 0
 
     //openFiles[0] = 0;
@@ -34,67 +35,64 @@ NachosOpenFilesTable::NachosOpenFilesTable(){
 int NachosOpenFilesTable::Open(int UnixHandle, int idThread)
 {
 
-
-  // ---------------- Primero se revisa si el archivo no estaba abierto por otro thread ----------------
   // Se crea el handle
-  int handle;
-	bool reAbrirArchivo=false;
+  int handle = 0;
 
-	// Se recorren todos los threads (primer for)
-	for(int indiceThead = 0;indiceThead < (int)vecMapsOpenFiles->size(); indiceThead++)
+  bool archivoEstaAbierto = 0;
+  bool reabrir = false;
+
+  //printf("Bitmap antes de creación de archivo\n");
+  //openFilesMap->Print();
+  //printf("\n");
+
+  // Recorre el bitmap de archivos abiertos buscando si está abierto (si su bit está en 1)
+
+  for(int indiceArchivo = 0; indiceArchivo < openFilesMap->getNumBits() ; indiceArchivo ++){
+
+    archivoEstaAbierto = (openFilesMap->Test(indiceArchivo)); //isOpened(indiceArchivo, indiceThead); //  (vecMapsOpenFiles->at(i)->Test(j));
+    bool handlesSonIguales = (openFiles[indiceArchivo] == UnixHandle);
+
+    // Si el archivo está abierto y es el archivo al que nos referimos
+    if(archivoEstaAbierto && handlesSonIguales){
+      reabrir = true;
+      handle = indiceArchivo; // El handle será el índice del archivo elegido
+    }
+  }
+
+  if(reabrir == true){ // Si se está reabriendo el archivo, se devuelve el handle, porque ya está abierto
+    return handle;
+  }
+
+  // Si no estaba abierto, se trata de abrir el archivo, es decir, se modifica el vector de archivos abiertos
+  // y se marca el bit para el mismo
+
+  handle = openFilesMap->Find();
+
+  // Si se logró asignar el handle, es decir, el handle no es -1
+
+  if(handle != -1)
 	{
-    // Se recorren todos los archivos de cada thread (con el limite declarado antes)
-		for(int indiceArchivo=0; indiceArchivo < limiteDeArchivosAbiertos; indiceArchivo++)
+		if(openFiles[handle] == -1){ // Si la posición está desocupada
+			openFiles[handle] = UnixHandle; // ASIGNA
+      openFilesMap->Mark(handle); // Marca en el bitmap como ocupado
+    }
+		else //Si el espacio está ocupado, se le hace clear y se devuelve -1
 		{
-
-      bool archivoEstaAbierto = isOpened(indiceArchivo, indiceThead); //  (vecMapsOpenFiles->at(i)->Test(j));
-      bool handlesSonIguales = (openFiles[indiceArchivo] == UnixHandle);
-
-			if(archivoEstaAbierto && handlesSonIguales)
-			{
-        reAbrirArchivo=true;
-				handle = indiceArchivo; // Se devuelve este handle
-			}
-
-		}
-	}
-
-  // Si el archivo estaba abierto en otro thread, se reabre y se devuelve el handle del file
-	if(reAbrirArchivo)
-	{
-    // Se asigna en el handle del file del thread actual con el Mark
-
-    vecMapsOpenFiles->at(idThread)->Mark(handle);
-    // Se retorna el handle
-		return handle;
-	}
-
-  // Si el archivo no estaba abierto por ningún thread se asigna un descriptor nuevo
-
-	handle = vecMapsOpenFiles->at(idThread)->Find();
-
-	// Si se logró asignar el nuevo descriptor, se cambia el openFiles y el vecMapsOpenFiles
-	if(handle != -1)
-	{
-    // Si es -1, significa que está vacío ese espacio
-		if(openFiles[handle] == -1)
-
-			openFiles[handle] = UnixHandle; // ASIGNACIÓN DEL PARÁMETRO INGRESADO AL HANDLE
-
-		else
-		{
-      // Si hay algo ahí, se limpia y se asigna
-      vecMapsOpenFiles->at(idThread)->Clear(handle);
+			openFilesMap->Clear(handle);
 			handle = -1;
 		}
 	}
 
-	return handle;
+  //printf("Bitmap después de creación de archivo\n");
+  //openFilesMap->Print();
+
+  return handle;
 }
 
 
 int NachosOpenFilesTable::getUnixHandle( int nachosHandle, int idThread)
 {
+  /*
 
   //Si el archivo existe && está abierto según el mapa del thread actual
 
@@ -112,29 +110,40 @@ int NachosOpenFilesTable::getUnixHandle( int nachosHandle, int idThread)
 	else{
     return -1; // Si no, devuelve -1
   }
+
+  */
+
+  if(isOpened(nachosHandle)){
+    return openFiles[nachosHandle]; // Devuelve el handle
+  }else{
+    return -1;
+  }
 }
 
-// Este método devuelve si un archivo está abierto
-// por alguno de los threads activo
-// Recibe el id del thread respectivo y el nachosHandle de un archivo
-// Devuelve true si algún archivo está abierto en algún hilo
-// Si no, devuelve 0
+// Devuelve si un archivo específico está abierto
 
-bool NachosOpenFilesTable::isOpened(int idThread, int nachosHandle){
+// bool NachosOpenFilesTable::isOpened(int idThread, int nachosHandle){
+bool NachosOpenFilesTable::isOpened(int nachosHandle){
 
   //return openFilesMaps->at(idThread)->Test(nachosHandle);
   //return openFilesMap->Test(nachosHandle);
   // Los métodos anteriores funcionan sin multiprogramación
 
   // Devuelve si el archivo está abierto, en el thread especificado
+  /*
 
   return vecMapsOpenFiles->at(idThread)->Test(nachosHandle);
+  */
 
+  return openFilesMap->Test(nachosHandle);
 }
 
 NachosOpenFilesTable::~NachosOpenFilesTable(){
+  /*
 
   delete[] openFiles; // Borra los open files
 	delete[] vecMapsOpenFiles; // Borra el map de los files abiertos
+
+  */
 
 }

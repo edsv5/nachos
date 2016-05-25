@@ -27,8 +27,8 @@
 #define SC_Read		6 // Listo (falta multiprog)
 #define SC_Write	7 // Listo (falta multiprog)
 #define SC_Close	8
-#define SC_Fork		9
-#define SC_Yield	10
+#define SC_Fork		9 // Listo
+#define SC_Yield	10 // Listo
 #define SC_SemCreate	11 // Listo (falta resolver duda sobre segfault)
 #define SC_SemDestroy	12 // Listo (falta resolver duda sobre segfault)
 #define SC_SemSignal	13 // Listo (falta resolver duda sobre segfault)

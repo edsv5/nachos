@@ -44,6 +44,15 @@ Thread::Thread(const char* threadName)
     archivosAbiertosPorThread = 0;
     idThread = -1; // El ID del thread empieza en -1
 
+    // Nuevo: crea un nuevo bitmap para el thread
+
+    //BitMap* b = new BitMap(32);
+
+    // Nuevo: Se inserta en el NachosOpenFilesTable del thread un elemento nuevo en el vector de bitmaps
+
+    //space->openFilesTable->vecMapsOpenFiles->push_back(b);
+
+
 #ifdef USER_PROGRAM
     space = NULL;
 #endif

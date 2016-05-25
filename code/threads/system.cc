@@ -48,7 +48,7 @@ int cantidadSemaforosNachos;
 
 // Inicializa la tabla de archivos abiertos (mientras se implementa la multiprogramación)
 
-// NachosOpenFilesTable* openFilesTable;
+NachosOpenFilesTable* openFilesTable;
 
 #endif
 

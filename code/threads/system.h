@@ -77,7 +77,7 @@ extern std::map<int, Semaphore* > *mapSemaforosNachos;
 
 
 //Tabla global de files abiertos (prueba mientras se implementa la multiprogramación)
-//extern NachosOpenFilesTable* openFilesTable;
+extern NachosOpenFilesTable* openFilesTable;
 
 #endif
 

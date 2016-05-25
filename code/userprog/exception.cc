@@ -68,14 +68,14 @@ void returnFromSystemCall() {
 
 void NachosForkThread(void* funcPtr){ //parametro es la direccion de la funcion que se va a correr en el nuevo Thread
 	//DEBUG
-  DEBUG('t', "Estableciendo registros para hilo %s: 0x%x...\n", currentThread->getName(), funcPtr);  
+  DEBUG('t', "Estableciendo registros para hilo %s: 0x%x...\n", currentThread->getName(), funcPtr);
   //AddrSpace actual
   AddrSpace* space = currentThread->space;
   //Inicializa registros y reestablece el estado delthread
   space->InitRegisters();
   space->RestoreState();
-  
-  
+
+
   //valor de retorno (syscall 4 - Exit por si falla el llamado)
   machine->WriteRegister(RetAddrReg, 4);
   //cast a int para meterlo a un registro
@@ -83,17 +83,17 @@ void NachosForkThread(void* funcPtr){ //parametro es la direccion de la funcion 
   //proxima instruccion a ejecutar
   machine->WriteRegister(PCReg, (long)funcPtr);
   //instruccion que sigue
-  machine->WriteRegister(NextPCReg, x+4);  
-								
-								
+  machine->WriteRegister(NextPCReg, x+4);
+
+
 	//ERRORES QUE ME ESTABAN DANDO
   //printf("PageFaultException: %d (PageFaultException: No valid translation found)\n", PageFaultException);
   //printf("AddressErrorException: %d (AddressErrorException: Unaligned reference or one that was beyond the end of the address space)\n", AddressErrorException);
-  
-  
-  printf("\n");   
+
+
+  printf("\n");
 	//corre el programa
-  machine->Run();    
+  machine->Run();
   //no ocupa volver del system call (ReturnFrom...)
   ASSERT(false);          //no se para que es
 }
@@ -211,6 +211,7 @@ void Nachos_Create(){
  */
 void Nachos_Open() {
   /* System call definition described to user
+
   	int Open(
   		char *name	// Register 4
   	);
@@ -251,21 +252,17 @@ void Nachos_Open() {
 	// between user file and unix file
 	// Verify for errors
 
-	// Se hace conversión de UNIX handle a NachOS handle y se asigna al thread actual
-  // printf("FILEID: %d\n", fileId);
-  // printf("AAPT: %d\n", currentThread->getArchivosAbiertosPorThread());
   if(fileId == -1){ // Si el archivo no existe, no hace nada
     printf("El archivo '%s' no existe.\n", nombreFile);
   }else{ // Pero si existe, lo abre
     printf("Archivo '%s' abierto.\n", nombreFile);
-    //fileId = currentThread->space->openFilesTable->Open(fileId,currentThread->getArchivosAbiertosPorThread()); // currentThread->getOpenFilesID()
+    //fileId = currentThread->space->openFilesTable->Open(fileId,currentThread->getArchivosAbiertosPorThread());
+    fileId = currentThread->space->openFilesTable->Open(fileId,currentThread->getArchivosAbiertosPorThread());
   }
 
   // Devuelve el fid correspondiente
 
   machine->WriteRegister(2,fileId);
-
-
   returnFromSystemCall();		// Update the PC registers
 
 }       // Nachos_Open
@@ -574,7 +571,7 @@ void Nachos_Close(){
 		char errorMC[29] = {"Error on close: invalid FD.\n"};
 		printf("%s",errorMC);
 	}
-  
+
   */
 
   returnFromSystemCall();		// Update the PC registers
@@ -591,16 +588,16 @@ DEBUG( 'u', "Entering Fork System call\n" );  //DEBUG
 	//Crea Addrspace para el thread, constructor asigna espacio al stack
 	//copia variables compartidas (tabla de archivos abiertos, addrspace original, numPages+stack)
 	newT->openFilesTable = currentThread->openFilesTable;
-	
+
 	newT->space = new AddrSpace( currentThread->space );
 	//Llama al Fork
 	newT->Fork( NachosForkThread, (void*)machine->ReadRegister( 4 ) );  //cast to pointer from integer of different size
 	// Llama Yield
 	currentThread->Yield();
 	//incrementa PC
-	returnFromSystemCall();	// This adjust the PrevPC, PC, and NextPC 
-	
-	DEBUG( 'u', "Exiting Fork System call\n" );		//DEBUG	
+	returnFromSystemCall();	// This adjust the PrevPC, PC, and NextPC
+
+	DEBUG( 'u', "Exiting Fork System call\n" );		//DEBUG
 }
 
 /////////////////////////// System call 10 ///////////////////////////

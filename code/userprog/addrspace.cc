@@ -208,10 +208,14 @@ TranslationEntry* AddrSpace::getPageTable(){
 
 AddrSpace::AddrSpace(AddrSpace* space){
 	//calcula las paginas que ocupa para el stack
-	int newNumPages = divRoundUp(UserStackSize, PageSize);	
+	int newNumPages = divRoundUp(UserStackSize, PageSize);
 	//PageTable "padre" de donde se copian los datos
 	TranslationEntry* padre = space->getPageTable();
-	
+
+	// AÑADIDO
+	//El OpenFTable es el mismo del currentThread
+	openFilesTable = space->openFilesTable;
+
 	//verifica que las paginas usadas mas las del stack no sean mas que las paginas disponibles
 	if(numPages + newNumPages <= NumPhysPages){
 		//espacio suficiente
@@ -220,7 +224,7 @@ AddrSpace::AddrSpace(AddrSpace* space){
 		int i;
 		//copia los datos del "padre"
 		for(i = 0; i < numPages; i++){
-			newPageTable[i] = padre[i];			
+			newPageTable[i] = padre[i];
 		}
 		//espacio del stack
 		for(i = numPages; i < newNumPages; i++){
@@ -234,7 +238,7 @@ AddrSpace::AddrSpace(AddrSpace* space){
 		//nuevos valores para los atributos
 		pageTable = newPageTable;		//PageTable con stack
 		numPages = (numPages + newNumPages);		//paginas usadas anteriormente mas las paginas de stack
-		
+
 	}else{
 		//espacio insuficiente
 		DEBUG('a', "Espacio insuficiente para pila\n");
