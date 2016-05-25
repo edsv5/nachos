@@ -30,6 +30,19 @@ class AddrSpace {
 					// initializing it with the program
 					// stored in the file "executable"
     ~AddrSpace();			// De-allocate an address space
+    
+    
+    
+//-----------------------NUEVO------------------------------------------
+    //Constructor para AddrSpace, copia elementos compartidos y crea stack
+    AddrSpace(AddrSpace* space);    
+    //Getters
+    unsigned int getNumPages();
+    TranslationEntry* getPageTable();
+//----------------------------------------------------------------------
+
+
+
 
     void InitRegisters();		// Initialize user-level CPU registers,
 					// before jumping to user code
