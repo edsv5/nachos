@@ -28,9 +28,13 @@ NachosOpenFilesTable::NachosOpenFilesTable(){
 
 }
 
-// Este método revisa todos los threads a ver si un archivo está abierto
-// Si está abierto, pero en otro thread, se abre en el thread actual (correspondiente a idThread)
-// Si no está abierto, se le asigna un fileHandle y se actualiza openFiles y vecMapsOpenFiles
+/*
+ * Este método revisa el bitmap de archivos abiertos, si el archivo está abierto
+ * lo reabre y asigna el handle a el mismo archivo, si no está abierto, inserta en el
+ * bitmap un 1 correspondiente al archivo abierto y un handle en el vector de archivos
+ * abiertos. Al final devuelve el handle del archivo recién abierto.
+ *
+ */
 
 int NachosOpenFilesTable::Open(int UnixHandle, int idThread)
 {
@@ -89,30 +93,12 @@ int NachosOpenFilesTable::Open(int UnixHandle, int idThread)
   return handle;
 }
 
+/*
+ * Devuelve el UNIX handle correspondiente al archivo ingresado por parámetro
+ */
 
-int NachosOpenFilesTable::getUnixHandle( int nachosHandle, int idThread)
+int NachosOpenFilesTable::getUnixHandle(int nachosHandle)
 {
-  /*
-
-  //Si el archivo existe && está abierto según el mapa del thread actual
-
-  // NOTE: Recuerde que "vecMapsOpenFiles" está en NachosOpenFilesTable
-  // Aquí se consulta por el vecMapsOpenFiles del thread actual, se prueba si en la posición
-  // nachosHandle ( Test(nachosHandle) ) del thread actual ( at(idThread) ) está en 1 (con Test).
-  // Si está en 1, devuelve lo que haya en "openFiles[nachosHandle]" (vector con índices de files, en NachosOpenFilesTable)
-
-  bool archivoEstaAbierto = (nachosHandle >= 0 && vecMapsOpenFiles->at(idThread)->Test(nachosHandle));
-
-	if(archivoEstaAbierto)
-	{
-		return openFiles[nachosHandle]; // Devuelve el handle del archivo correspondiente
-	}
-	else{
-    return -1; // Si no, devuelve -1
-  }
-
-  */
-
   if(isOpened(nachosHandle)){
     return openFiles[nachosHandle]; // Devuelve el handle
   }else{
@@ -121,29 +107,20 @@ int NachosOpenFilesTable::getUnixHandle( int nachosHandle, int idThread)
 }
 
 // Devuelve si un archivo específico está abierto
+// para esto, revisa el mapa de archivos abiertos
+// correspondiente
 
-// bool NachosOpenFilesTable::isOpened(int idThread, int nachosHandle){
 bool NachosOpenFilesTable::isOpened(int nachosHandle){
 
   //return openFilesMaps->at(idThread)->Test(nachosHandle);
   //return openFilesMap->Test(nachosHandle);
-  // Los métodos anteriores funcionan sin multiprogramación
-
-  // Devuelve si el archivo está abierto, en el thread especificado
-  /*
-
-  return vecMapsOpenFiles->at(idThread)->Test(nachosHandle);
-  */
 
   return openFilesMap->Test(nachosHandle);
 }
 
 NachosOpenFilesTable::~NachosOpenFilesTable(){
-  /*
 
   delete[] openFiles; // Borra los open files
-	delete[] vecMapsOpenFiles; // Borra el map de los files abiertos
-
-  */
+	delete[] openFilesMap; // Borra el map de los files abiertos
 
 }

@@ -326,19 +326,14 @@ void Nachos_Read() {
 
 		default: // Cualquier otro caso es que se lee de un archivo
 
-      /* ************************** MÉTODO A ************************** TODO: Preguntar por qué se sale del vector?
+      bool archivoEstaAbierto = currentThread->space->openFilesTable->isOpened(descriptorFile);
+      int bytesLeidos = read(descriptorFile, buffer, size);
 
+      if(archivoEstaAbierto){
 
-      // Si el thread actual, en su addrspace tiene un archivo abierto en su tabla de archivos abiertos
-      int idDelThreadActual = currentThread->getIdThread(); // Para claridad del código
-      int bytesLeidos = 0; // Va a almacenar los bytes que leemos, si es que leemos
-      bool archivoEstaAbierto = currentThread->space->openFilesTable->isOpened(descriptorFile, idDelThreadActual);
-
-      if(archivoEstaAbierto)
-      {
         //Obtenemos el file handle de UNIX para usar los llamados de UNIX
 
-        int fileHandle = currentThread->space->openFilesTable->getUnixHandle(descriptorFile, idDelThreadActual );
+        int fileHandle = currentThread->space->openFilesTable->getUnixHandle(descriptorFile);
 
         // Se lee utilizando el read de UNIX, se guarda en bytes leídos
 
@@ -351,6 +346,7 @@ void Nachos_Read() {
 
           escrito = buffer[i];
           machine->WriteMem(bufferAddr + i, 1, escrito); // Va leyendo byte por byte
+
         }
 
         // Al final de la cadena, escribe un 0 para señalar que es el final de la cadena
@@ -358,26 +354,10 @@ void Nachos_Read() {
         // Devuelve al final, la cantidad de bytes que se leyeron
         machine->WriteRegister(2,bytesLeidos);
 
+      }else{
 
+        machine->WriteRegister(2,-1); // Si el archivo no estaba abierto
       }
-
-      */
-
-      // ************************** MÉTODO B **************************
-
-
-      int bytesLeidos = read(descriptorFile, buffer, size);
-      int escrito = 0;
-
-      // En este ciclo escribe los datos en memoria principal
-
-      for(int i = 0; i < size; i++){
-
-        escrito = buffer[i];
-        machine->WriteMem(bufferAddr + i, 1, escrito); // Va escribiendo byte por byte
-      }
-
-      machine->WriteRegister(2,bytesLeidos);
 
       break;
     }
