@@ -425,9 +425,6 @@ void Nachos_Write() {
       printf("--------------------------------------\n");
       machine->WriteRegister( 2, tamBuf ); // Devuelve la cantidad de bytes escritos
 		  break;
-		/*case ConsoleError:	// This trick permits to write integers to console
-			printf( "ERROR %d\n", machine->ReadRegister( 4 ) );
-			break; */
 		default:
 
       // All other opened files
@@ -435,62 +432,29 @@ void Nachos_Write() {
       // Get the unix handle from our table for open files
       // Do the write to the already opened Unix file
       // Return the number of chars written to user, via r2
+      //********* LISTO *********
 
-      // ************************** MÉTODO A ************************** TODO: Preguntar por qué se sale del vector?
+      bool archivoEstaAbierto = currentThread->space->openFilesTable->isOpened(descriptorFile);
 
-      // Se recupera el id del thread para mayor claridad
+      if(archivoEstaAbierto){
 
-      /*
-
-      int idDelThreadActual = currentThread->getIdThread();
-      bool archivoEstaAbierto = currentThread->space->openFilesTable->isOpened(descriptorFile, idDelThreadActual);
-
-      //printf("idDelThreadActual: %d \n", idDelThreadActual);
-      printf("Archivo abierto?: %d \n", archivoEstaAbierto);
-
-
-      // "Verify if the file is opened, if not return -1 in r2"
-      if(archivoEstaAbierto)
-      {
-        printf("Escribiendo en el archivo \n");
         //Obtenemos el file handle de UNIX para usar los llamados de UNIX
-        // "Get the unix handle from our table for open files"
-        // TODO: Por alguna razón, no está escribiendo el file
-        // int fileHandle = currentThread->space->openFilesTable->getUnixHandle(descriptorFile, idDelThreadActual );
-
-        // Se utiliza el write de UNIX para escribir el buffer al file descrito por el handle que
-        // acabamos de obtener, tamBuf es la cantidad de bytes que escribe en el file
-
-        // "Do the write to the already opened Unix file"
-        write(descriptorFile ,buffer, tamBuf);
-
-        // "Return the number of chars written to user, via r2"
-        machine->WriteRegister( 2, tamBuf );
+        int fileHandle = currentThread->space->openFilesTable->getUnixHandle(descriptorFile);
+        // Se escribe utilizando el read de UNIX
+        write(descriptorFile, buffer, tamBuf);
+        // Devuelve al final, la cantidad de bytes que se leyeron
+        machine->WriteRegister(2,tamBuf);
 
       }else{
-        machine->WriteRegister( 2, -1 ); // Error
-        printf("El archivo no está abierto \n");
+
+        machine->WriteRegister(2,-1); // Si el archivo no estaba abierto
       }
-
-      printf("Se escribió en el archivo \n");
-
-      */
-
-      // ************************** MÉTODO B **************************
-
-      write(descriptorFile, buffer, tamBuf);
-      machine->WriteRegister( 2, tamBuf ); // Devuelve la cantidad de bytes escritos
-
 			break;
 
 	}
 
-
 	// Update simulation stats, see details in Statistics class in machine/stats.cc
   //consoleS->V();
-
-
-
 
   returnFromSystemCall();		// Update the PC registers
 
