@@ -66,6 +66,11 @@ void returnFromSystemCall() {
 
 //---------------------------NUEVO----------------------------------------
 
+/*
+Inicializa los registros para el hilo nuevo
+recibe un puntero a la rutina que se va a ejecutar
+*/
+
 void NachosForkThread(void* funcPtr){ //parametro es la direccion de la funcion que se va a correr en el nuevo Thread
 	//DEBUG
   DEBUG('t', "Estableciendo registros para hilo %s: 0x%x...\n", currentThread->getName(), funcPtr);
@@ -523,7 +528,10 @@ void Nachos_Close(){
 }
 
 /////////////////////////// System call 9 ///////////////////////////
-
+/*
+Crea un nuevo hilo que comparte codigo y datos con el hilo padre, pero posee su propia pila
+el parametro recuperado del registro 4, contiene la direccion a una rutina
+*/
 
 void Nachos_Fork(){  		//NUEVO
 DEBUG( 'u', "Entering Fork System call\n" );  //DEBUG
