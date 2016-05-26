@@ -26,7 +26,7 @@
 #define SC_Open		5          // Listo
 #define SC_Read		6          // Listo
 #define SC_Write	7          // Listo
-#define SC_Close	8
+#define SC_Close	8          // Listo
 #define SC_Fork		9          // Listo
 #define SC_Yield	10         // Listo
 #define SC_SemCreate	11     // Listo (falta resolver duda sobre segfault)

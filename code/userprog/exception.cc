@@ -545,6 +545,7 @@ void Nachos_SemCreate(){
   // cantidadSemaforosNachos : variable global con la cantidad de semáforos activos
   // mapSemaforosNachos : mapa con los semáforos, asocia cada índice de semáforo
   // con un estado
+
   int initval = machine->ReadRegister(4); // Lee el parámetro 1
 
   // Inserta en el mapa de semáforos global, un semáforo inicializado en el valor del
@@ -602,19 +603,24 @@ void Nachos_SemDestroy(){
   int semId = machine->ReadRegister(4); // Saca el parámetro del registro
 
   // Destruye el semáforo
-
   mapSemaforosNachos->at(semId)->Destroy();
+
+  printf("    Semáforo %d destruido.\n", semId);
 
   //Elimina el semáforo correspondiente del mapa
 
 	if((int) mapSemaforosNachos->erase(semId) > 0) // Si el borrado del mapa fue exitoso
  	{
 		machine->WriteRegister(2,0); // Devuelve 0
+    cantidadSemaforosNachos--; // Decrementa la cantidad de semáforos
 	}
 	else // Si no tiene éxito devuelve -1
   {
+    printf("    Error en el SemDestroy.\n");
   	machine->WriteRegister(2,-1);
   }
+
+  printf("    Cantidad de semáforos: %d\n", cantidadSemaforosNachos);
 
   returnFromSystemCall();
 
@@ -632,14 +638,15 @@ void Nachos_SemSignal(){
 
   // TODO: Preguntar si esto está bien
 
-
   int semId = machine->ReadRegister(4); // Saca el parámetro del registro
 
 	if(mapSemaforosNachos->at(semId) != NULL ) // Si el semáforo existe
 	{
+    printf("    Haciendo signal en semáforo %d.\n", semId );
     mapSemaforosNachos->at(semId)-> V(); // le da signal
 		machine->WriteRegister(2,0); // Retorna exitoso
 	}else{
+    printf("Error en SemSignal\n" );
     machine->WriteRegister(2,-1); // Retorna sin éxito
   }
 
@@ -664,9 +671,11 @@ void Nachos_SemWait(){
 
 	if(mapSemaforosNachos->at(semId) != NULL ) // Si el semáforo existe
 	{
+    printf("    Haciendo wait en semáforo %d.\n", semId );
     mapSemaforosNachos->at(semId)-> P(); // Pone a esperar al semáforo correspondiente
 		machine->WriteRegister(2,0); // Retorna exitoso
 	}else{
+    printf("Error en SemWait\n");
     machine->WriteRegister(2,-1); // Retorna sin éxito
   }
 
