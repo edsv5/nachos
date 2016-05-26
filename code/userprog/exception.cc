@@ -25,6 +25,7 @@
 #include "system.h"
 #include "syscall.h"
 
+#include "threadsTabla.h" //NUEVO
 //----------------------------------------------------------------------
 // ExceptionHandler
 // 	Entry point into the Nachos kernel.  Called when a user program
@@ -48,6 +49,10 @@
 //	are in machine.h.
 //----------------------------------------------------------------------
 
+
+threadsTabla* threadsActivos = new threadsTabla();   //NUEVO  tabla de threads activos actualmente
+														//solo esta implementado para exec y join (faltan los demas, creo)
+
 ///////////////////////////////////////////////////////////////////////////////
 
 void returnFromSystemCall() {
@@ -65,6 +70,57 @@ void returnFromSystemCall() {
 
 
 //---------------------------NUEVO----------------------------------------
+
+/*
+	Lee de la memoria virtual	
+*/
+ 
+char * ReadFromNachosMemory(int virtualmemory){
+	//buffer
+	char* string = new char[100];
+	//contadores y identificador de fin de string
+	int fin = '\0';
+	int value = 0;
+	int posicion = 0;
+	//Lee nombre de archivo
+	do{
+		machine->ReadMem(virtualmemory+posicion,1,&value);
+		*(string + posicion) = value;
+		posicion++;
+	}while(value != fin);
+	//finaliza string
+	*(string + posicion) ='\0';
+	//retorna string
+	return string;
+}
+
+
+/*
+	Lo mismo que machine->startProcess
+*/
+
+void startProcess(const char *filename){	
+	OpenFile *executable = fileSystem->Open(filename);
+	AddrSpace *space;
+	
+	if (executable == NULL) {
+	printf("Unable to open file %s\n", filename);
+	return;
+	}
+	
+	space = new AddrSpace(executable);
+	currentThread->space = space;
+	
+	delete executable;			// close file
+	
+	space->InitRegisters();		// set the initial register values
+	space->RestoreState();		// load page table register
+	
+	machine->Run();			// jump to the user progam
+	ASSERT(false);			// machine->Run never returns;
+					// the address space exits
+					// by doing the syscall "exit"
+}
 
 /*
 Inicializa los registros para el hilo nuevo
@@ -125,12 +181,34 @@ void Nachos_Halt() {
 /////////////////////////// System call 2 ///////////////////////////
 
 
-void Nachos_Exec(){
+void Nachos_Exec(){				//NUEVO
 
-  returnFromSystemCall();		// Update the PC registers
+  //crea el nuevo thread
+	Thread* newT = new Thread("Thread for Exec");
+	//lo agrega a threads activos
+	newT->SpaceId = threadsActivos->AddThread(newT);
+	//lee nombre del archivo ejecutable guardado en el registro 4
+ 	char* name = ReadFromNachosMemory(machine->ReadRegister(4));
+ 	//corre el programa
+	startProcess((const char*)name);
 
 }
+/////////////////////////////NUEVO System call 3////////////////////////
 
+void Nachos_Join(){
+	//crea semaforo
+	Semaphore* s = new Semaphore("Join",0);
+	//lee con cual thread hacer el join
+	int id = machine->ReadRegister(4);
+	//espera al join
+	int identificador = threadsActivos->addJoin(currentThread,s,id);	
+	s->P();
+	//hace el join
+	threadsActivos->delJoin(currentThread,s,identificador,id);
+	//devuelve id del thread
+	machine->WriteRegister(2,identificador);
+	returnFromSystemCall();
+}
 
 /////////////////////////// System call 4 ///////////////////////////
 
@@ -701,11 +779,12 @@ ExceptionHandler(ExceptionType which)
           currentThread->Finish();    // Finaliza el thread actual
           break;
         case SC_Exec:                 // System call # 2
-          printf("*** SC_Exec ***\n");                      // FALTA
+          printf("*** SC_Exec ***\n");                      // FALTA TERMINAR
           Nachos_Exec();
           break;
         case SC_Join:                 // System call # 3
-          printf("*** SC_Join ***\n");                      // FALTA
+          printf("*** SC_Join ***\n");                      // FALTA TERMINAR
+          Nachos_Join();
           break;
         case SC_Create:               // System call # 4
           printf("*** SC_Create ***\n");

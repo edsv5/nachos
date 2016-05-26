@@ -55,6 +55,10 @@ Thread::Thread(const char* threadName)
 
 #ifdef USER_PROGRAM
     space = NULL;
+    
+    //tabla de archivos abiertos  NUEVO
+    openFilesTable = NULL;
+    
 #endif
 }
 
@@ -323,5 +327,7 @@ Thread::RestoreUserState()
 {
     for (int i = 0; i < NumTotalRegs; i++)
 	machine->WriteRegister(i, userRegisters[i]);
+	/*machine->pageTable = pageTable;
+    machine->pageTableSize = numPages;*/
 }
 #endif

@@ -139,8 +139,11 @@ AddrSpace::AddrSpace(OpenFile *executable)
   for (i = 0; i < numPages; i++) {
 		//printf("Pagina actual: %d\n", i);
 		pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
-		pageTable[i].physicalPage = mapMemoria->Find(); // Iguala la página al primer bit que esté libre del bitmap de memoria
-		//pageTable[i].physicalPage = i;
+		
+		/////////////CAMBIO TEMPORAL//////////////
+		//pageTable[i].physicalPage = mapMemoria->Find(); // Iguala la página al primer bit que esté libre del bitmap de memoria
+		//le cae encima al thread anterior
+		pageTable[i].physicalPage = i;
 		pageTable[i].valid = true;
 		pageTable[i].use = false;
 		pageTable[i].dirty = false;
@@ -195,7 +198,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
 
 
 
-//--------------------------NUEVOS_GETTERS------------------------------
+//Getters
 unsigned int AddrSpace::getNumPages(){
 	return numPages;
 }
@@ -204,7 +207,7 @@ TranslationEntry* AddrSpace::getPageTable(){
 	return pageTable;
 }
 
-//-------------------NUEVO_CONSTRUCTOR----------------------------------
+////constructor con parametro AddrSpace
 
 AddrSpace::AddrSpace(AddrSpace* space){
 	//calcula las paginas que ocupa para el stack

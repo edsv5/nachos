@@ -146,10 +146,11 @@ class Thread {
     void RestoreUserState();		// restore user-level register state
 
     AddrSpace *space;			// User code this thread is running.
+    OpenFile* openFilesTable;  //arreglo de archivos abierto por el thread
     
 //--------------NUEVO-------------------------------------------------------
 
-    OpenFile* openFilesTable;  //arreglo de archivos abierto por el thread
+    int SpaceId;				//Id para identificar addrspace (space)
 
 //--------------------------------------------------------------------------
 
