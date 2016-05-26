@@ -134,14 +134,8 @@ void Nachos_Exec(){
 
 /////////////////////////// System call 4 ///////////////////////////
 
-/* ---  Nachos_Read ---
+/* ---  Nachos_Create ---
  *
- * Esto recibe en el registro 4 el nombre del archivo que se quiere leer.
- * Se hace una traducción del nombre de este archivo con la función
- * ReadMem y se asigna dicha traducción, caracter por caracter, al arreglo
- * nombreFile, después de que este arreglo está completo, se utiliza la
- * función de UNIX creat, con el nombre del archivo que traducimos
- * y los permisos necesarios para poder hacerle read y write al archivo
  *
  */
 void Nachos_Create(){
@@ -267,7 +261,9 @@ void Nachos_Open() {
  * Read(char *buffer, int size, OpenFileId id);
  */
 
+
 void Nachos_Read() {
+
 
   int bufferAddr = machine->ReadRegister( 4 ); // Lee la dirección del buffer que se quiere leer
   int size = machine->ReadRegister( 5 ); // Tamaño del archivo por leer
@@ -278,8 +274,9 @@ void Nachos_Read() {
   char buffer[size]; // Guarda lo que se va a escribir en memoria
   int valPorEscribir = 0; // ya que WriteMem acepta ints, guardamos como int
 
+
   switch (descriptorFile) {
-		case  ConsoleInput:	// Lee del input de la consola
+ 	case  ConsoleInput:	// Lee del input de la consola
 
       scanf("%s", buffer); // Lee y deja lo leído en buffer
 
@@ -291,7 +288,7 @@ void Nachos_Read() {
         // Escribe en memoria en la posición apropiado (bufferAddr + i)
         machine->WriteMem(bufferAddr+i,1,valPorEscribir);
         if(valPorEscribir == 0){ // Si el char escrito es null (llega al final), sale
-          i=size;
+         i=size;
         }
       }
 
@@ -300,22 +297,26 @@ void Nachos_Read() {
       machine->WriteRegister(2,size);
 
       //TODO: Preguntar si esto está bien
-			break;
+		break;
     case  ConsoleOutput: // No se puede hacer read del output
       printf("    No se puede leer de console output. \n");
       machine->WriteRegister(2,-1);
       break;
 
-		default: // Cualquier otro caso es que se lee de un archivo
-
+	  default: // Cualquier otro caso es que se lee de un archivo
+      printf("    Leyendo de archivo %d...\n", descriptorFile );
       bool archivoEstaAbierto = currentThread->space->openFilesTable->isOpened(descriptorFile);
-      int bytesLeidos = read(descriptorFile, buffer, size);
+      //int bytesLeidos = read(descriptorFile, buffer, size);
+      int bytesLeidos = 0;
+      printf("    Está abierto?: %d\n", archivoEstaAbierto );
 
       if(archivoEstaAbierto){
 
         //Obtenemos el file handle de UNIX para usar los llamados de UNIX
 
         int fileHandle = currentThread->space->openFilesTable->getUnixHandle(descriptorFile);
+        printf("    Handle de NachOS: %d\n", descriptorFile);
+        printf("    Handle de UNIX: %d\n", fileHandle);
 
         // Se lee utilizando el read de UNIX, se guarda en bytes leídos
 
@@ -678,7 +679,6 @@ void Nachos_SemWait(){
     printf("Error en SemWait\n");
     machine->WriteRegister(2,-1); // Retorna sin éxito
   }
-
 
   returnFromSystemCall();
 
