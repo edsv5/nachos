@@ -39,8 +39,7 @@ BitMap* mapMemoria = new BitMap(32); // Se inicializa con 32 bits, 1 por página
 
 // Inicializa map de semáforos
 
-std::map<int,Semaphore* > *mapSemaforosNachos;
-//std::map<int,int> *mapSemaforosNachos;
+std::map<int,Semaphore* > *mapSemaforosNachos = new std::map<int,Semaphore* > ;
 
 // Inicializa contador de semáforos
 

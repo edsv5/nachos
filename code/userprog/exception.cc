@@ -174,7 +174,7 @@ void Nachos_Create(){
   // Se utiliza el creat de UNIX
 
 	creat(nombreFile,0777);
-  printf("Archivo '%s' creado.\n", nombreFile );
+  printf("    Archivo '%s' creado.\n", nombreFile );
 
 	returnFromSystemCall();		// Update the PC registers
 }
@@ -235,9 +235,9 @@ void Nachos_Open() {
 	// Verify for errors
 
   if(fileId == -1){ // Si el archivo no existe, no hace nada
-    printf("El archivo '%s' no existe.\n", nombreFile);
+    printf("    El archivo '%s' no existe.\n", nombreFile);
   }else{ // Pero si existe, lo abre
-    printf("Archivo '%s' abierto.\n", nombreFile);
+    printf("    Archivo '%s' abierto.\n", nombreFile);
     //fileId = currentThread->space->openFilesTable->Open(fileId,currentThread->getArchivosAbiertosPorThread());
     fileId = currentThread->space->openFilesTable->Open(fileId,currentThread->getArchivosAbiertosPorThread());
   }
@@ -302,7 +302,7 @@ void Nachos_Read() {
       //TODO: Preguntar si esto está bien
 			break;
     case  ConsoleOutput: // No se puede hacer read del output
-      printf("No se puede leer de console output. \n");
+      printf("    No se puede leer de console output. \n");
       machine->WriteRegister(2,-1);
       break;
 
@@ -372,7 +372,7 @@ void Nachos_Write() {
   int tamBuf = machine->ReadRegister(5);
   OpenFileId descriptorFile = machine->ReadRegister(6);
 
-  printf("Descriptor del archivo: %d\n", descriptorFile );
+  printf("    Descriptor del archivo: %d\n", descriptorFile );
 
   //Crea el buffer en el que va a guardar la traducción que lee de memoria de usuario
 
@@ -400,14 +400,14 @@ void Nachos_Write() {
 		case  ConsoleInput:	// El usuario no puede escribir al input de la consola
       // Console Input = 0
 			machine->WriteRegister( 2, -1 );
-      printf("No puede escribir en el input de la consola. \n ");
+      printf("    No puede escribir en el input de la consola. \n ");
 			break;
 		//case  ConsoleError:
     case  ConsoleOutput: // Ambos casos se contemplan en 1
-      printf("\nEscribiendo en consola... \n");
-      printf("--------------------------------------\n");
-      printf( "%s \n", buffer );
-      printf("--------------------------------------\n");
+      printf("    Escribiendo en consola... \n");
+      printf("    --------------------------------------\n");
+      printf("    %s \n", buffer );
+      printf("    --------------------------------------\n");
       machine->WriteRegister( 2, tamBuf ); // Devuelve la cantidad de bytes escritos
 		  break;
 		default:
@@ -418,7 +418,8 @@ void Nachos_Write() {
       // Do the write to the already opened Unix file
       // Return the number of chars written to user, via r2
       //********* LISTO *********
-      printf("Escribiendo en archivo %d ... \n", descriptorFile);
+
+      printf("    Escribiendo en archivo %d ... \n", descriptorFile);
 
       bool archivoEstaAbierto = currentThread->space->openFilesTable->isOpened(descriptorFile);
 
@@ -432,7 +433,7 @@ void Nachos_Write() {
         // Devuelve al final, la cantidad de bytes que se leyeron
         machine->WriteRegister(2,tamBuf);
 
-        printf("Escritos %d bytes en archivo %d (UNIX) con éxito.\n", tamBuf, unixFileHandle );
+        printf("    Escritos %d bytes en archivo %d (UNIX) con éxito.\n", tamBuf, unixFileHandle );
 
       }else{
 
@@ -477,9 +478,9 @@ void Nachos_Close(){
     // Se hace después el close de Unix con el handle de UNIX que nos devolvieron
     // Si da error, avisa
     if(close(handleUnix) == -1){
-      printf("No se pudo cerrar el archivo %d.\n", handleUnix);
+      printf("    No se pudo cerrar el archivo %d.\n", handleUnix);
     }else{
-      printf("Archivo %d cerrado con éxito.\n", handleUnix);
+      printf("    Archivo %d cerrado con éxito.\n", handleUnix);
     }
 
   }
@@ -540,8 +541,6 @@ void Nachos_Yield(){		//NUEVO
 
 void Nachos_SemCreate(){
 
-  printf("Entrando a SemCreate\n");
-
   // Importante:
   // cantidadSemaforosNachos : variable global con la cantidad de semáforos activos
   // mapSemaforosNachos : mapa con los semáforos, asocia cada índice de semáforo
@@ -564,7 +563,11 @@ void Nachos_SemCreate(){
 
   // Inserta en el mapa de semáforos
 
+  printf("    Semáforo creado! init val: %d \n", initval );
+  printf("    Cantidad de semáforos antes del SemCreate: %d \n", cantidadSemaforosNachos );
+
   mapSemaforosNachos->insert(std::pair<int,Semaphore*>(cantidadSemaforosNachos,nuevoSem));
+  printf("    Semáforo insertado en la posición %d del vector de semáforos. \n", cantidadSemaforosNachos );
 
   // Retorna en registro 2 el índice del semáforo recién creado
 
@@ -573,6 +576,8 @@ void Nachos_SemCreate(){
   // Hay un semáforo más, aumenta el contador
 
   cantidadSemaforosNachos++;
+
+  printf("    Cantidad de semáforos después del SemCreate: %d \n", cantidadSemaforosNachos );
 
   //TODO: Preguntar si esto está bien
 
@@ -683,38 +688,38 @@ ExceptionHandler(ExceptionType which)
           Nachos_Halt();
           break;
         case SC_Exit:                 // System call # 1
-          printf("--- SC_Exit ---\n");
+          printf("*** SC_Exit ***\n");
           currentThread->Finish();    // Finaliza el thread actual
           break;
         case SC_Exec:                 // System call # 2
-          printf("--- SC_Exec ---\n");                      // FALTA
+          printf("*** SC_Exec ***\n");                      // FALTA
           Nachos_Exec();
           break;
         case SC_Join:                 // System call # 3
-          printf("--- SC_Join ---\n");                      // FALTA
+          printf("*** SC_Join ***\n");                      // FALTA
           break;
         case SC_Create:               // System call # 4
-          printf("--- SC_Create ---\n");
+          printf("*** SC_Create ***\n");
           Nachos_Create();
           break;
         case SC_Open:                 // System call # 5
-          printf("--- SC_Open ---\n");                      // FALTA TERMINAR
+          printf("*** SC_Open ***\n");                      // FALTA TERMINAR
           Nachos_Open();
           break;
         case SC_Read:                 // System call # 6
-          printf("--- SC_Read ---\n");
+          printf("*** SC_Read ***\n");
           Nachos_Read();
           break;
         case SC_Write:                // System call # 7
-          printf("--- SC_Write ---\n");
+          printf("*** SC_Write ***\n");
           Nachos_Write();
           break;
         case SC_Close:                // System call # 8
-          printf("--- SC_Close ---\n");                      // FALTA
+          printf("*** SC_Close ***\n");                      // FALTA
           Nachos_Close();
           break;
         case SC_Fork:                 // System call # 9
-          printf("--- SC_Fork ---\n");                      // FALTA
+          printf("*** SC_Fork ***\n");                      // FALTA
           Nachos_Fork();
           break;
         case SC_Yield:                // System call # 10
@@ -722,19 +727,19 @@ ExceptionHandler(ExceptionType which)
           Nachos_Yield();
           break;
         case SC_SemCreate:            // System call # 11
-          printf("--- SC_SemCreate ---\n");
+          printf("*** SC_SemCreate ***\n");
           Nachos_SemCreate();
           break;
         case SC_SemDestroy:           // System call # 12
-          printf("--- SC_SemDestroy ---\n");
+          printf("*** SC_SemDestroy ***\n");
           Nachos_SemDestroy();
           break;
         case SC_SemSignal:            // System call # 13
-          printf("--- SC_SemSignal ---\n");
+          printf("*** SC_SemSignal ***\n");
           Nachos_SemSignal();
           break;
         case SC_SemWait:              // System call # 14
-          printf("--- SC_SemWait ---\n");
+          printf("*** SC_SemWait ***\n");
           Nachos_SemWait();
           break;
         default:
