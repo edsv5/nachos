@@ -49,9 +49,9 @@
 //	are in machine.h.
 //----------------------------------------------------------------------
 
+// NUEVO  tabla de threads activos actualmente
 
-threadsTabla* threadsActivos = new threadsTabla();   //NUEVO  tabla de threads activos actualmente
-														//solo esta implementado para exec y join (faltan los demas, creo)
+threadsTabla* threadsActivos = new threadsTabla();
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -67,14 +67,15 @@ void returnFromSystemCall() {
 
 
 
-
-
 //---------------------------NUEVO----------------------------------------
 
-/*
-	Lee de la memoria virtual	
-*/
- 
+/** ---  ReadFromNachosMemory ---
+ * Lee de la memoria virtual de NachOS.
+ * @param virtualmemory Posición en la memoria virtual de donde se quiere
+ *                      leer.
+ * @return Devuelve el string leído de la memoria de NachOS.
+ */
+
 char * ReadFromNachosMemory(int virtualmemory){
 	//buffer
 	char* string = new char[100];
@@ -94,38 +95,41 @@ char * ReadFromNachosMemory(int virtualmemory){
 	return string;
 }
 
+/** ---  startProcess ---
+ * Efectúa lo mismo que machine->startProcess.
+ */
 
-/*
-	Lo mismo que machine->startProcess
-*/
-
-void startProcess(const char *filename){	
+void startProcess(const char *filename){
 	OpenFile *executable = fileSystem->Open(filename);
 	AddrSpace *space;
-	
+
 	if (executable == NULL) {
 	printf("Unable to open file %s\n", filename);
 	return;
 	}
-	
+
 	space = new AddrSpace(executable);
 	currentThread->space = space;
-	
+
 	delete executable;			// close file
-	
+
 	space->InitRegisters();		// set the initial register values
 	space->RestoreState();		// load page table register
-	
+
 	machine->Run();			// jump to the user progam
 	ASSERT(false);			// machine->Run never returns;
 					// the address space exits
 					// by doing the syscall "exit"
 }
 
-/*
-Inicializa los registros para el hilo nuevo
-recibe un puntero a la rutina que se va a ejecutar
-*/
+/** ---  NachosForkThread ---
+ * Inicializa los registros para el hilo nuevo que creó un fork
+ * recibe un puntero a la rutina que se va a ejecutar.
+ *
+ * @param funcPtr Puntero a la rutina que se va a ejecutar.
+ * @return No devuelve nada.
+ */
+
 
 void NachosForkThread(void* funcPtr){ //parametro es la direccion de la funcion que se va a correr en el nuevo Thread
 	//DEBUG
@@ -145,24 +149,22 @@ void NachosForkThread(void* funcPtr){ //parametro es la direccion de la funcion 
   machine->WriteRegister(PCReg, (long)funcPtr);
   //instruccion que sigue
   machine->WriteRegister(NextPCReg, x+4);
-
-
-	//ERRORES QUE ME ESTABAN DANDO
-  //printf("PageFaultException: %d (PageFaultException: No valid translation found)\n", PageFaultException);
-  //printf("AddressErrorException: %d (AddressErrorException: Unaligned reference or one that was beyond the end of the address space)\n", AddressErrorException);
-
-
   printf("\n");
 	//corre el programa
   machine->Run();
   //no ocupa volver del system call (ReturnFrom...)
-  ASSERT(false);          //no se para que es
+  ASSERT(false);
 }
-
 
 //-------------------- VERSIÓN CORREGIDA --------------------//
 
 /////////////////////////// System call 0 ///////////////////////////
+
+/** ---  Nachos_Halt ---
+ * Detiene la ejecución de NachOS.
+ * @param Ninguno.
+ * @return Nada.
+ */
 
 void Nachos_Halt() {
 
@@ -171,51 +173,78 @@ void Nachos_Halt() {
 
 }       // Nachos_Halt
 
-
-
 /////////////////////////// System call 1 ///////////////////////////
 
-// Implementado en el case de abajo
+
+void Nachos_Exit(){
+
+  currentThread->Finish();    // Finaliza el thread actual
+  returnFromSystemCall();
+
+}
 
 
 /////////////////////////// System call 2 ///////////////////////////
 
+/** ---  Nachos_Exec ---
+ * Crea un nuevo thread y lo agrega a los threads activos, lee el
+ * nombre del archivo ejecutable en el registro 4 y lo corre.
+ *
+ * @param name Nombre del archivo que se va a ejecutar.
+ * @return No devuelve nada.
+ */
 
 void Nachos_Exec(){				//NUEVO
 
-  //crea el nuevo thread
+  // Crea el nuevo thread
 	Thread* newT = new Thread("Thread for Exec");
-	//lo agrega a threads activos
+	// Lo agrega a threads activos
 	newT->SpaceId = threadsActivos->AddThread(newT);
-	//lee nombre del archivo ejecutable guardado en el registro 4
+	// Lee nombre del archivo ejecutable guardado en el registro 4
  	char* name = ReadFromNachosMemory(machine->ReadRegister(4));
- 	//corre el programa
+ 	// Corre el programa
 	startProcess((const char*)name);
 
 }
-/////////////////////////////NUEVO System call 3////////////////////////
+/////////////////////////// System call 3////////////////////////
+
+/** ---  Nachos_Join ---
+ *
+ * Lee un identificador de un hilo y lo une con otro hilo.
+ *
+ * @param   id Identificador del hilo con el que se va a hacer
+ *          Join.
+ * @return  Devuelve el identificador del thread al que se le
+ *          hizo el Join.
+ */
 
 void Nachos_Join(){
-	//crea semaforo
+	// Crea semáforo
 	Semaphore* s = new Semaphore("Join",0);
-	//lee con cual thread hacer el join
+	// Lee con cual thread hacer el join
 	int id = machine->ReadRegister(4);
-	//espera al join
-	int identificador = threadsActivos->addJoin(currentThread,s,id);	
+	// Espera al join
+	int identificador = threadsActivos->addJoin(currentThread,s,id);
 	s->P();
-	//hace el join
+	// Hace el join
 	threadsActivos->delJoin(currentThread,s,identificador,id);
-	//devuelve id del thread
+	// Devuelve id del thread
 	machine->WriteRegister(2,identificador);
 	returnFromSystemCall();
 }
 
 /////////////////////////// System call 4 ///////////////////////////
 
-/* ---  Nachos_Create ---
+/** ---  Nachos_Create ---
  *
+ * Crea un archivo con el nombre ingresado por parámetro.
  *
+ * @param   nombreIngresado Nombre que se le quiere dar al archivo que
+ *          se va a crear
+ * @return  Si tiene éxito, devuelve el handle de UNIX del archivo
+ *          recién creado, si falla, devuelve -1.
  */
+
 void Nachos_Create(){
 
 
@@ -243,26 +272,38 @@ void Nachos_Create(){
 		indice++; // Sigue con la siguiente posicion del nombre
 	}
 
-  // Se utiliza el creat de UNIX
-
-	creat(nombreFile,0777);
-  printf("    Archivo '%s' creado.\n", nombreFile );
+  // Se utiliza el creat de UNIX para la creación del archivo nuevo
+  int handleNuevo = creat(nombreFile,0777);
+  if(handleNuevo != -1){ // Si no falla en el creat
+    printf("    Archivo '%s' creado.\n", nombreFile );
+    printf("    UNIX handle: %d\n", handleNuevo);
+    machine->WriteRegister(2,handleNuevo); // Devuelve el handle de UNIX del archivo recién creado
+  }else{
+    printf("Error al crear el archivo %s\n", nombreFile);
+    machine->WriteRegister(2,-1); // Si falla, devuelve -1
+  }
 
 	returnFromSystemCall();		// Update the PC registers
 }
 
 
 /////////////////////////// System call 5 ///////////////////////////
-/* ---  Nachos_Open ---
+
+
+/** ---  Nachos_Open ---
  *
- * Esto recibe en el registro 4 el nombre del archivo que se quiere abrir.
+ * Recibe en el registro 4 el nombre del archivo que se quiere abrir.
  * Se hace una traducción del nombre de este archivo con la función
- * ReadMem y se asigna dicha traducción, caracter por caracter, al arreglo
- * nombreFile, después de que este arreglo está completo, se utiliza la
- * función de UNIX open, con el nombre del archivo que traducimos
- * y las banderas necesarias para poder crear el archivo.
- * Devuelve el Unix handle del archivo nuevo.
+ * ReadMem y se asigna dicha traducción, caracter por caracter, al
+ * arreglo nombreFile, después de que este arreglo está completo, se
+ * utiliza la función de UNIX open, con el nombre del archivo que
+ * traducimos y las banderas necesarias para poder crear el archivo.
+.*
+ * @param   nombreIngresado El nombre del archivo que se quiere abrir.
+ * @return  Si tiene éxito, devuelve el handle de UNIX del archivo
+ *          recién abierto, si falla, devuelve -1.
  */
+
 void Nachos_Open() {
   /* System call definition described to user
 
@@ -310,6 +351,7 @@ void Nachos_Open() {
     printf("    El archivo '%s' no existe.\n", nombreFile);
   }else{ // Pero si existe, lo abre
     printf("    Archivo '%s' abierto.\n", nombreFile);
+    printf("    UNIX handle: %d\n", fileId );
     //fileId = currentThread->space->openFilesTable->Open(fileId,currentThread->getArchivosAbiertosPorThread());
     fileId = currentThread->space->openFilesTable->Open(fileId,currentThread->getArchivosAbiertosPorThread());
   }
@@ -323,22 +365,26 @@ void Nachos_Open() {
 
 /////////////////////////// System call 6 ///////////////////////////
 
-/* ---  Nachos_Read ---
+/** ---  Nachos_Read ---
  *
- * Documentación del método:
- *
- * Read "size" bytes from the open file into "buffer".
- * Return the number of bytes actually read -- if the open file isn't
- * long enough, or if it is an I/O device, and there aren't enough
- * characters to read, return whatever is available (for I/O devices,
- * you should always wait until you can return at least one character).
- *
- * Se supone que debería leer una hilera y devolverla a memoria
- * principal
- *
- * Read(char *buffer, int size, OpenFileId id);
+ * Lee, en el buffer recibido en el registro 4, la cantidad de bytes
+ * recibida en el registro 5 del archivo cuyo NachOS handle se recibe
+ * en el registro 6. Se escriben los datos leídos en memoria
+ * principal. Si se recibe como handle un 0, lee del console input
+ * un texto ingresado por el usuario. Si se recibe un 1, no hace
+ * nada, pues no se puede leer del ConsoleOutput. En cualquier otro
+ * caso (se quiere leer de un archivo) se revisa si el archivo está
+ * abierto, si lo está, lee del mismo. Si no lo está, devuelve un
+ * -1. Si está abierto, lo lee.
+.*
+ * @param   bufferAddr La dirección del buffer de memoria en donde se
+ *          quiere leer el contenido del archivo.
+ * @param   size Tamaño en bytes de lo que se quiere leer.
+ * @param   descriptorFile NachOS handle del archivo del cual se quiere
+ *          leer
+ * @return  Si tiene éxito, devuelve la cantidad de bytes leídos. Si
+ *          falla, devuelve -1.
  */
-
 
 void Nachos_Read() {
 
@@ -351,11 +397,12 @@ void Nachos_Read() {
 
   char buffer[size]; // Guarda lo que se va a escribir en memoria
   int valPorEscribir = 0; // ya que WriteMem acepta ints, guardamos como int
-
+  int bytesEscritosEnMemoria = 0;
 
   switch (descriptorFile) {
  	case  ConsoleInput:	// Lee del input de la consola
-
+      printf("    Leyendo de la consola...\n");
+      printf("    > ");
       scanf("%s", buffer); // Lee y deja lo leído en buffer
 
       // Luego escribe ese buffer en memoria
@@ -365,6 +412,7 @@ void Nachos_Read() {
         valPorEscribir = (int) buffer[i]; // Convierte el char a int
         // Escribe en memoria en la posición apropiado (bufferAddr + i)
         machine->WriteMem(bufferAddr+i,1,valPorEscribir);
+        bytesEscritosEnMemoria++;
         if(valPorEscribir == 0){ // Si el char escrito es null (llega al final), sale
          i=size;
         }
@@ -372,9 +420,9 @@ void Nachos_Read() {
 
       // Retorna los bytes escritos en memoria
 
-      machine->WriteRegister(2,size);
+      machine->WriteRegister(2,bytesEscritosEnMemoria);
+      printf("    %d bytes leídos en memoria.\n", bytesEscritosEnMemoria );
 
-      //TODO: Preguntar si esto está bien
 		break;
     case  ConsoleOutput: // No se puede hacer read del output
       printf("    No se puede leer de console output. \n");
@@ -382,19 +430,29 @@ void Nachos_Read() {
       break;
 
 	  default: // Cualquier otro caso es que se lee de un archivo
-      printf("    Leyendo de archivo %d...\n", descriptorFile );
-      bool archivoEstaAbierto = currentThread->space->openFilesTable->isOpened(descriptorFile);
-      //int bytesLeidos = read(descriptorFile, buffer, size);
+      // Si el file handle (NachOS) recibido es un -1 es porque se quiere leer de un archivo
+      // que no existe.
+
+      // Empieza en 0, si el archivo no está abierto o no existe, se deja en 0
+      bool archivoEstaAbierto = 0;
       int bytesLeidos = 0;
-      printf("    Está abierto?: %d\n", archivoEstaAbierto );
+      if(descriptorFile != -1){
+
+        printf("    File handle (NachOS) del archivo por leer: %d...\n", descriptorFile );
+        archivoEstaAbierto = currentThread->space->openFilesTable->isOpened(descriptorFile);
+        //int bytesLeidos = read(descriptorFile, buffer, size);
+        printf("    Está abierto?: %d\n", archivoEstaAbierto );
+
+      }
+
 
       if(archivoEstaAbierto){
 
         //Obtenemos el file handle de UNIX para usar los llamados de UNIX
 
         int fileHandle = currentThread->space->openFilesTable->getUnixHandle(descriptorFile);
-        printf("    Handle de NachOS: %d\n", descriptorFile);
-        printf("    Handle de UNIX: %d\n", fileHandle);
+        printf("    NachOS handle: %d\n", descriptorFile);
+        printf("    UNIX handle: %d\n", fileHandle);
 
         // Se lee utilizando el read de UNIX, se guarda en bytes leídos
 
@@ -415,8 +473,10 @@ void Nachos_Read() {
         // Devuelve al final, la cantidad de bytes que se leyeron
         machine->WriteRegister(2,bytesLeidos);
 
-      }else{
+        printf("    %d bytes leídos con éxito del archivo %d (UNIX) | %d (NachOS).\n", bytesLeidos, fileHandle, descriptorFile );
 
+      }else{
+        printf("    Error en el Read, el archivo no existe.\n");
         machine->WriteRegister(2,-1); // Si el archivo no estaba abierto
       }
 
@@ -431,19 +491,28 @@ void Nachos_Read() {
 
 /////////////////////////// System call 7 ///////////////////////////
 
-// Recibe una dirección a un buffer
-// el tamano de la hilera
-// id del file abierto
+/** ---  Nachos_Write ---
+ *
+ * Escribe 'tamBuf' bytes del 'bufIngresado' en el archivo cuyo
+ * descriptor corresponde a 'descriptorFile'. Esto incluye que se
+ * quiera escribir en el archivo 0 (ConsoleInput, en cuyo caso da
+ * error) o el archivo 1 (ConsoleOutput, escribe en la consola).
+ * Cualquier otro handle recibido corresponde a un archivo en el
+ * cual se desea escribir.
+.*
+ * @param   bufIngresado Corresponde a el buffer en el que se guarda
+ *          el contenido de lo que se quiere escribir para
+ *          escribirlo. Puede ser un string de texto o un arreglo
+ *          de caracteres.
+ * @param   tamBuf Cuántos bytes se quieren escribir del
+ *          bufIngresado.
+ * @param   descriptorFile NachOS handle del archivo del cual se quiere
+ *          leer
+ * @return  Si tiene éxito, devuelve la cantidad de bytes escritos.
+ *          Si falla, devuelve un -1.
+ */
 
 void Nachos_Write() {
-
-// System call definition described to user
-//        void Write(
-//		char *buffer,	// Register 4
-//		int size,	// Register 5
-//		 OpenFileId id	// Register 6
-//	);
-
 
   // Lee parámetros de los registros
 
@@ -451,7 +520,7 @@ void Nachos_Write() {
   int tamBuf = machine->ReadRegister(5);
   OpenFileId descriptorFile = machine->ReadRegister(6);
 
-  printf("    Descriptor del archivo: %d\n", descriptorFile );
+  printf("    NachOS handle: %d\n", descriptorFile );
 
   //Crea el buffer en el que va a guardar la traducción que lee de memoria de usuario
 
@@ -471,10 +540,6 @@ void Nachos_Write() {
     buffer[i] = traduccion; // Traduce el número a char
   }
 
-
-	// Need a semaphore to synchronize access to console
-	//consoleS->P();
-
 	switch (descriptorFile) {
 		case  ConsoleInput:	// El usuario no puede escribir al input de la consola
       // Console Input = 0
@@ -484,9 +549,9 @@ void Nachos_Write() {
 		//case  ConsoleError:
     case  ConsoleOutput: // Ambos casos se contemplan en 1
       printf("    Escribiendo en consola... \n");
-      printf("    --------------------------------------\n");
-      printf("    %s \n", buffer );
-      printf("    --------------------------------------\n");
+      printf("\n");
+      printf("    < %s \n", buffer );
+      printf("\n");
       machine->WriteRegister( 2, tamBuf ); // Devuelve la cantidad de bytes escritos
 		  break;
 		default:
@@ -498,7 +563,7 @@ void Nachos_Write() {
       // Return the number of chars written to user, via r2
       //********* LISTO *********
 
-      printf("    Escribiendo en archivo %d ... \n", descriptorFile);
+      printf("    Escribiendo en archivo %d (NachOS handle) ...\n", descriptorFile);
 
       bool archivoEstaAbierto = currentThread->space->openFilesTable->isOpened(descriptorFile);
 
@@ -507,12 +572,11 @@ void Nachos_Write() {
         //Obtenemos el file handle de UNIX para usar los llamados de UNIX
         int unixFileHandle = currentThread->space->openFilesTable->getUnixHandle(descriptorFile);
         // Se escribe utilizando el read de UNIX
-        //write(descriptorFile, buffer, tamBuf);
         write(unixFileHandle, buffer, tamBuf);
         // Devuelve al final, la cantidad de bytes que se leyeron
         machine->WriteRegister(2,tamBuf);
 
-        printf("    Escritos %d bytes en archivo %d (UNIX) con éxito.\n", tamBuf, unixFileHandle );
+        printf("    Escritos %d bytes en archivo %d (UNIX) | %d (NachOS) con éxito.\n", tamBuf, unixFileHandle, descriptorFile);
 
       }else{
 
@@ -522,30 +586,40 @@ void Nachos_Write() {
 
 	}
 
-	// Update simulation stats, see details in Statistics class in machine/stats.cc
-  //consoleS->V();
-
   returnFromSystemCall();		// Update the PC registers
 
-}  // Nachos_Write
+}
 
 
 /////////////////////////// System call 8 ///////////////////////////
-/* ---  Nachos_Close ---
- *
- * Recibe un handle de Nachos para cerrar el archivo, se hace la conversión a UNIX handle
- * y se cierra también en UNIX.
- *
- *
- * Close(OpenFileId id);
- */
 
+/** ---  Nachos_Close ---
+ *
+ * Escribe 'tamBuf' bytes del 'bufIngresado' en el archivo cuyo
+ * descriptor corresponde a 'descriptorFile'. Esto incluye que se
+ * quiera escribir en el archivo 0 (ConsoleInput, en cuyo caso da
+ * error) o el archivo 1 (ConsoleOutput, escribe en la consola).
+ * Cualquier otro handle recibido corresponde a un archivo en el
+ * cual se desea escribir.
+.*
+ * @param   descriptorFile File handle de NachOS del archivo que se
+ *          quiere cerrar.
+ * @return  Devuelve 1 si tuvo éxito, devuelve -1 si no tuvo éxito.
+ */
 
 void Nachos_Close(){
 
-
   OpenFileId descriptorFile = machine->ReadRegister(4); // Lee el id del file que queremos cerrar
-  bool archivoEstaAbierto = currentThread->space->openFilesTable->isOpened(descriptorFile);
+  bool archivoEstaAbierto = 0;
+  // Si el descriptor es -1 es porque está tratando de cerrar un archivo que no existe
+  if(descriptorFile != -1){
+    archivoEstaAbierto = currentThread->space->openFilesTable->isOpened(descriptorFile);
+    printf("    Cerrando archivo %d (NachOS)\n", descriptorFile);
+    printf("    Archivo está abierto?: %d\n", archivoEstaAbierto );
+
+  }else{
+    printf("    El archivo que está tratando de cerrar no existe.\n");
+  }
 
   // Primero pregunta si el archivo está abierto, si está abierto, utiliza el close de UNIX para cerrar el
   // archivo, luego hace las actualizaciones correspondientes en el bitmap de archivos abiertos
@@ -554,14 +628,18 @@ void Nachos_Close(){
   if (archivoEstaAbierto) {
     // Si está abierto, se hace el close de NachOS
     int handleUnix = currentThread->space->openFilesTable->Close(descriptorFile);
+    printf("    UNIX handle: %d\n", handleUnix );
     // Se hace después el close de Unix con el handle de UNIX que nos devolvieron
     // Si da error, avisa
     if(close(handleUnix) == -1){
       printf("    No se pudo cerrar el archivo %d.\n", handleUnix);
+      machine->WriteRegister(2,-1); // Si falla, devuelve -1
     }else{
-      printf("    Archivo %d cerrado con éxito.\n", handleUnix);
+      printf("    Archivo %d (UNIX) cerrado con éxito.\n", handleUnix);
+      machine->WriteRegister(2,1); // Si tiene éxito, devuelve un 1
     }
-
+  }else{
+    printf("    No se pudo cerrar el archivo especificado\n");
   }
 
   returnFromSystemCall();		// Update the PC registers
@@ -569,10 +647,18 @@ void Nachos_Close(){
 }
 
 /////////////////////////// System call 9 ///////////////////////////
-/*
-Crea un nuevo hilo que comparte codigo y datos con el hilo padre, pero posee su propia pila
-el parametro recuperado del registro 4, contiene la direccion a una rutina
-*/
+
+/** ---  Nachos_Fork ---
+ *
+ * Crea un nuevo hilo que comparte codigo y datos con el hilo padre,
+ * pero posee su propia pila. El parametro recuperado del registro 4,
+ * contiene la dirección a una rutina.
+.*
+ * @param   (void*) machine->ReadRegister( 4 ) Corresponde a la
+ *          dirección de una rutina que se quiere forkear.
+ * @return  No devuelve nada
+ */
+
 
 void Nachos_Fork(){  		//NUEVO
 DEBUG( 'u', "Entering Fork System call\n" );  //DEBUG
@@ -584,7 +670,7 @@ DEBUG( 'u', "Entering Fork System call\n" );  //DEBUG
 
 	newT->space = new AddrSpace( currentThread->space );
 	//Llama al Fork
-	newT->Fork( NachosForkThread, (void*)machine->ReadRegister( 4 ) );  //cast to pointer from integer of different size
+	newT->Fork( NachosForkThread, (void*) machine->ReadRegister( 4 ) );  //cast to pointer from integer of different size
 	// Llama Yield
 	currentThread->Yield();
 	//incrementa PC
@@ -606,17 +692,17 @@ void Nachos_Yield(){		//NUEVO
 
 /////////////////////////// System call 11 ///////////////////////////
 
-/* ---  Nachos_SemCreate ---
-
- * Este system call recibe en el registro 4 el valor de inicialización
- * del semáforo que se quiere crear. Este inserta en el mapa de semáforos
- * de NachOS un par (índice, valor de inicialización) que representa el semáforo
- * que se está creando
-
+/** ---  Nachos_SemCreate ---
+ *
+ * Recibe en el registro 4 el valor de inicialización del semáforo
+ * que se quiere crear. Inserta en el mapa de semáforos de NachOS
+ * un par (índice, valor de inicialización) que representa el
+ * semáforo que se está creando.
+.*
+ * @param   initval Valor inicial del semáforo que se desea crear.
+ * @return  Cantidad de semáforos en el vector de semáforos de
+ *          NachOS después del SemCreate.
  */
-
-// TODO: Por ahora, sólo controla la estructura que dice cuántos semáforos hay
-// Averiguar cómo involucrarlos verdaderamente
 
 void Nachos_SemCreate(){
 
@@ -635,15 +721,13 @@ void Nachos_SemCreate(){
 
   //mapSemaforosNachos->insert(std::pair<int,int>(cantidadSemaforosNachos,initval));
 
-  //TODO: Preguntar esto
-
   // CAMBIO, ahora se inserta en el mapa un semáforo asociado a un índice
 
   Semaphore* nuevoSem = new Semaphore("SemNuevo", initval);	// Crea un semáfoto con el initval especificado
 
   // Inserta en el mapa de semáforos
 
-  printf("    Semáforo creado! init val: %d \n", initval );
+  printf("    Semáforo creado. Valor inicial: %d \n", initval );
   printf("    Cantidad de semáforos antes del SemCreate: %d \n", cantidadSemaforosNachos );
 
   mapSemaforosNachos->insert(std::pair<int,Semaphore*>(cantidadSemaforosNachos,nuevoSem));
@@ -659,22 +743,20 @@ void Nachos_SemCreate(){
 
   printf("    Cantidad de semáforos después del SemCreate: %d \n", cantidadSemaforosNachos );
 
-  //TODO: Preguntar si esto está bien
-
   returnFromSystemCall();
-
-
 
 }
 
 /////////////////////////// System call 12 ///////////////////////////
 
-/* ---  Nachos_SemDestroy ---
+/** ---  Nachos_SemDestroy ---
  *
  * Destruye el semáforo identificado por SemId, el cual lee del registro 4
- * Utiliza el erase del map para borrar el semáforo especificado por el id del
+ * Utiliza el erase de map para borrar el semáforo especificado por el id del
  * parámetro
- *
+.*
+ * @param   semId Índice del semáforo que se quiere destruir.
+ * @return  Si tiene éxito, devuelve 0, si falla, devuelve -1.
  */
 
 void Nachos_SemDestroy(){
@@ -710,7 +792,12 @@ void Nachos_SemDestroy(){
 
 /* ---  Nachos_SemSignal ---
  *
+ * Le da Signal al semáforo especificado por el Id que ingresa en
+ * el registro 4.
  *
+ * @param   semId Índice del semáforo al que se le quiere hacer
+ *          signal.
+ * @return  Si tiene éxito, devuelve 0, si falla, devuelve -1.
  */
 
 void Nachos_SemSignal(){
@@ -729,7 +816,6 @@ void Nachos_SemSignal(){
     machine->WriteRegister(2,-1); // Retorna sin éxito
   }
 
-
   returnFromSystemCall();
 
 }
@@ -738,13 +824,15 @@ void Nachos_SemSignal(){
 
 /* ---  Nachos_SemWait ---
  *
+ * Le hace Wait al semáforo cuyo Id es el mismo del parámetro leído
+ * en el registro 4.
  *
+ * @param   semId Índice del semáforo al que se le quiere hacer
+ *          wait.
+ * @return  Si tiene éxito, devuelve 0, si falla, devuelve -1.
  */
 
 void Nachos_SemWait(){
-
-  // TODO: Preguntar si esto está bien
-
 
   int semId = machine->ReadRegister(4); // Saca el parámetro del registro
 
@@ -772,11 +860,12 @@ ExceptionHandler(ExceptionType which)
     case SyscallException:
       switch ( type ) {
         case SC_Halt:                 // System call # 0
+          printf("*** SC_Halt ***\n");
           Nachos_Halt();
           break;
         case SC_Exit:                 // System call # 1
           printf("*** SC_Exit ***\n");
-          currentThread->Finish();    // Finaliza el thread actual
+          Nachos_Exit();
           break;
         case SC_Exec:                 // System call # 2
           printf("*** SC_Exec ***\n");                      // FALTA TERMINAR
