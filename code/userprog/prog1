@@ -1,0 +1,13 @@
+#include "syscall.h"
+
+int main(){
+
+	int i,fd;
+	char buffer[ 100 ];
+	char filebuf[ 100 ];
+
+	Write("***** Iniciando Programa de Prueba  *****",42,1);
+	Write("Hola, soy prog1.",16,1);
+
+	//Halt();
+}

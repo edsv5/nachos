@@ -681,13 +681,19 @@ DEBUG( 'u', "Entering Fork System call\n" );  //DEBUG
 
 /////////////////////////// System call 10 ///////////////////////////
 
+/** ---  Nachos_Yield ---
+ *
+ * Cede el control del CPU, si hay otro hilo activo.
+.*
+ * @param   El método recibe en el registro 4 el id del hilo activo
+ * @return  No devuelve nada
+ */
 
 void Nachos_Yield(){		//NUEVO
 	DEBUG('p', "%s esta cediendo\n", currentThread->getName());
   currentThread->Yield();
   machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
 }
-
 
 
 /////////////////////////// System call 11 ///////////////////////////
@@ -868,11 +874,11 @@ ExceptionHandler(ExceptionType which)
           Nachos_Exit();
           break;
         case SC_Exec:                 // System call # 2
-          printf("*** SC_Exec ***\n");                      // FALTA TERMINAR
+          printf("*** SC_Exec ***\n");
           Nachos_Exec();
           break;
         case SC_Join:                 // System call # 3
-          printf("*** SC_Join ***\n");                      // FALTA TERMINAR
+          printf("*** SC_Join ***\n");
           Nachos_Join();
           break;
         case SC_Create:               // System call # 4
@@ -880,7 +886,7 @@ ExceptionHandler(ExceptionType which)
           Nachos_Create();
           break;
         case SC_Open:                 // System call # 5
-          printf("*** SC_Open ***\n");                      // FALTA TERMINAR
+          printf("*** SC_Open ***\n");
           Nachos_Open();
           break;
         case SC_Read:                 // System call # 6
@@ -892,15 +898,15 @@ ExceptionHandler(ExceptionType which)
           Nachos_Write();
           break;
         case SC_Close:                // System call # 8
-          printf("*** SC_Close ***\n");                      // FALTA
+          printf("*** SC_Close ***\n");
           Nachos_Close();
           break;
         case SC_Fork:                 // System call # 9
-          printf("*** SC_Fork ***\n");                      // FALTA
+          printf("*** SC_Fork ***\n");
           Nachos_Fork();
           break;
         case SC_Yield:                // System call # 10
-          printf("--- SC_Yield ---\n");                      // FALTA
+          printf("--- SC_Yield ---\n");
           Nachos_Yield();
           break;
         case SC_SemCreate:            // System call # 11
@@ -920,15 +926,14 @@ ExceptionHandler(ExceptionType which)
           Nachos_SemWait();
           break;
         default:
-          //printf("--- Case default ---\n");
-          //printf("Unexpected syscall exception %d\n", type );
+          printf("*** Case default ***\n");
+          printf("Unexpected syscall exception %d\n", type );
           ASSERT(false);
           break;
       }
       break;
     default:
       printf( "Unexpected exception %d\n", which );
-      //ASSERT(FALSE);
       ASSERT(false);
       break;
   }
