@@ -28,7 +28,7 @@
 #define SC_Write	7          // Listo, documentado
 #define SC_Close	8          // Listo, documentado
 #define SC_Fork		9          // Listo, documentado
-#define SC_Yield	10         // Listo, 
+#define SC_Yield	10         // Listo, documentado
 #define SC_SemCreate	11     // Listo, documentado
 #define SC_SemDestroy	12     // Listo, documentado
 #define SC_SemSignal	13     // Listo, documentado
