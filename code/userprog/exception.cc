@@ -72,9 +72,9 @@ void returnFromSystemCall() {
 //---------------------------NUEVO----------------------------------------
 
 /*
-	Lee de la memoria virtual	
+	Lee de la memoria virtual
 */
- 
+
 char * ReadFromNachosMemory(int virtualmemory){
 	//buffer
 	char* string = new char[100];
@@ -99,23 +99,23 @@ char * ReadFromNachosMemory(int virtualmemory){
 	Lo mismo que machine->startProcess
 */
 
-void startProcess(const char *filename){	
+void startProcess(const char *filename){
 	OpenFile *executable = fileSystem->Open(filename);
 	AddrSpace *space;
-	
+
 	if (executable == NULL) {
 	printf("Unable to open file %s\n", filename);
 	return;
 	}
-	
+
 	space = new AddrSpace(executable);
 	currentThread->space = space;
-	
+
 	delete executable;			// close file
-	
+
 	space->InitRegisters();		// set the initial register values
 	space->RestoreState();		// load page table register
-	
+
 	machine->Run();			// jump to the user progam
 	ASSERT(false);			// machine->Run never returns;
 					// the address space exits
@@ -175,7 +175,13 @@ void Nachos_Halt() {
 
 /////////////////////////// System call 1 ///////////////////////////
 
-// Implementado en el case de abajo
+
+void Nachos_Exit(){
+
+  currentThread->Finish();    // Finaliza el thread actual
+  returnFromSystemCall();
+
+}
 
 
 /////////////////////////// System call 2 ///////////////////////////
@@ -201,7 +207,7 @@ void Nachos_Join(){
 	//lee con cual thread hacer el join
 	int id = machine->ReadRegister(4);
 	//espera al join
-	int identificador = threadsActivos->addJoin(currentThread,s,id);	
+	int identificador = threadsActivos->addJoin(currentThread,s,id);
 	s->P();
 	//hace el join
 	threadsActivos->delJoin(currentThread,s,identificador,id);
@@ -212,10 +218,14 @@ void Nachos_Join(){
 
 /////////////////////////// System call 4 ///////////////////////////
 
-/* ---  Nachos_Create ---
- *
- *
+/** ---  Nachos_Create ---
+ * Crea un archivo con el nombre ingresado por parámetro.
+ * @param nombreIngresado Nombre que se le quiere dar al archivo que
+ *        se va a crear
+ * @return
  */
+
+
 void Nachos_Create(){
 
 
@@ -355,7 +365,7 @@ void Nachos_Read() {
 
   switch (descriptorFile) {
  	case  ConsoleInput:	// Lee del input de la consola
-
+      printf("> ");
       scanf("%s", buffer); // Lee y deja lo leído en buffer
 
       // Luego escribe ese buffer en memoria
@@ -776,7 +786,7 @@ ExceptionHandler(ExceptionType which)
           break;
         case SC_Exit:                 // System call # 1
           printf("*** SC_Exit ***\n");
-          currentThread->Finish();    // Finaliza el thread actual
+          Nachos_Exit();
           break;
         case SC_Exec:                 // System call # 2
           printf("*** SC_Exec ***\n");                      // FALTA TERMINAR
