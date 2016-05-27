@@ -13,24 +13,7 @@ threadsTabla::~threadsTabla(){
 	delete hilosJoin;
 	delete hilosMapa;
 }
-/*
-int threadsTabla::addJoin(Thread* thread, Semaphore* s,int identificador, SpaceId id){
-	//int identificador = hilosMapa->Find();
-	hilosJoin[identificador].hilo = thread;
-	hilosJoin[identificador].sem = s;
-	hilosJoin[identificador].hiloEsperado = id;
-	//hilosMapa->Mark(identificador);
-	return identificador;
-}
-*/
-/*
-int threadsTabla::delJoin(Thread* thread, Semaphore* s,int identificador, SpaceId id){
-	hilosJoin[identificador].hilo = NULL;
-	hilosJoin[identificador].sem = NULL;
-	hilosJoin[identificador].hiloEsperado = -1;
-	//hilosMapa->Clear(identificador);
-	return identificador;
-}*/
+
 int threadsTabla::addJoin(Thread* thread, Semaphore* s, SpaceId id){
 	int identificador = hilosMapa->Find();
 	hilosJoin[identificador].hilo = thread;
@@ -65,7 +48,7 @@ bool threadsTabla::UniqueSpaceUsing(AddrSpace *space,SpaceId ID){
 	bool Unico = true;
 	
 	//Si otro thread tiene la misma pagina fisica quiere decir que no es el 
-  	//unico con la misma tabla de archivos y demas
+  	//unico con la misma tabla de archivos
 	TranslationEntry* pageTable =  space->getPageTable();
 	int physicalPage = pageTable[0].physicalPage;
 	int physicalPageCurrent;
@@ -89,7 +72,6 @@ bool threadsTabla::UniqueSpaceUsing(AddrSpace *space,SpaceId ID){
 SpaceId threadsTabla::AddThread(Thread* thread){
 	int clearPosition = threadsOnMap->Find();
 	threadsOn[clearPosition] = thread;
-	//printf("Thread agregado");
 	return clearPosition;
 }
 
