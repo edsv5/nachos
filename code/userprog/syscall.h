@@ -18,21 +18,21 @@
 /* system call codes -- used by the stubs to tell the kernel which system call
  * is being asked for
  */
-#define SC_Halt		0          // Listo con hilos
-#define SC_Exit		1          // Listo con hilos
-#define SC_Exec		2
-#define SC_Join		3
-#define SC_Create	4          // Listo
-#define SC_Open		5          // Listo
-#define SC_Read		6          // Listo
-#define SC_Write	7          // Listo
-#define SC_Close	8          // Listo
-#define SC_Fork		9          // Listo
+#define SC_Halt		0          // Listo, documentado
+#define SC_Exit		1          // Listo, documentado
+#define SC_Exec		2          // Listo, documentado
+#define SC_Join		3          // Listo, documentado
+#define SC_Create	4          // Listo, documentado
+#define SC_Open		5          // Listo, documentado
+#define SC_Read		6          // Listo, documentado
+#define SC_Write	7          // Listo, documentado
+#define SC_Close	8          // Listo, documentado
+#define SC_Fork		9          // Listo, documentado
 #define SC_Yield	10         // Listo
-#define SC_SemCreate	11     // Listo (falta resolver duda sobre segfault)
-#define SC_SemDestroy	12     // Listo (falta resolver duda sobre segfault)
-#define SC_SemSignal	13     // Listo (falta resolver duda sobre segfault)
-#define SC_SemWait	14       // Listo (falta resolver duda sobre segfault)
+#define SC_SemCreate	11     // Listo, documentado
+#define SC_SemDestroy	12     // Listo, documentado
+#define SC_SemSignal	13     // Listo, documentado
+#define SC_SemWait	14       // Listo, documentado
 
 #ifndef IN_ASM
 

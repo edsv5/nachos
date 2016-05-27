@@ -49,7 +49,7 @@
 //	are in machine.h.
 //----------------------------------------------------------------------
 
-//NUEVO  tabla de threads activos actualmente
+// NUEVO  tabla de threads activos actualmente
 
 threadsTabla* threadsActivos = new threadsTabla();
 
@@ -160,7 +160,6 @@ void NachosForkThread(void* funcPtr){ //parametro es la direccion de la funcion 
 
 /////////////////////////// System call 0 ///////////////////////////
 
-
 /** ---  Nachos_Halt ---
  * Detiene la ejecución de NachOS.
  * @param Ninguno.
@@ -173,8 +172,6 @@ void Nachos_Halt() {
         interrupt->Halt();
 
 }       // Nachos_Halt
-
-
 
 /////////////////////////// System call 1 ///////////////////////////
 
@@ -189,32 +186,49 @@ void Nachos_Exit(){
 
 /////////////////////////// System call 2 ///////////////////////////
 
+/** ---  Nachos_Exec ---
+ * Crea un nuevo thread y lo agrega a los threads activos, lee el
+ * nombre del archivo ejecutable en el registro 4 y lo corre.
+ *
+ * @param name Nombre del archivo que se va a ejecutar.
+ * @return No devuelve nada.
+ */
 
 void Nachos_Exec(){				//NUEVO
 
-  //crea el nuevo thread
+  // Crea el nuevo thread
 	Thread* newT = new Thread("Thread for Exec");
-	//lo agrega a threads activos
+	// Lo agrega a threads activos
 	newT->SpaceId = threadsActivos->AddThread(newT);
-	//lee nombre del archivo ejecutable guardado en el registro 4
+	// Lee nombre del archivo ejecutable guardado en el registro 4
  	char* name = ReadFromNachosMemory(machine->ReadRegister(4));
- 	//corre el programa
+ 	// Corre el programa
 	startProcess((const char*)name);
 
 }
-/////////////////////////////NUEVO System call 3////////////////////////
+/////////////////////////// System call 3////////////////////////
+
+/** ---  Nachos_Join ---
+ *
+ * Lee un identificador de un hilo y lo une con otro hilo.
+ *
+ * @param   id Identificador del hilo con el que se va a hacer
+ *          Join.
+ * @return  Devuelve el identificador del thread al que se le
+ *          hizo el Join.
+ */
 
 void Nachos_Join(){
-	//crea semaforo
+	// Crea semáforo
 	Semaphore* s = new Semaphore("Join",0);
-	//lee con cual thread hacer el join
+	// Lee con cual thread hacer el join
 	int id = machine->ReadRegister(4);
-	//espera al join
+	// Espera al join
 	int identificador = threadsActivos->addJoin(currentThread,s,id);
 	s->P();
-	//hace el join
+	// Hace el join
 	threadsActivos->delJoin(currentThread,s,identificador,id);
-	//devuelve id del thread
+	// Devuelve id del thread
 	machine->WriteRegister(2,identificador);
 	returnFromSystemCall();
 }
@@ -230,7 +244,6 @@ void Nachos_Join(){
  * @return  Si tiene éxito, devuelve el handle de UNIX del archivo
  *          recién creado, si falla, devuelve -1.
  */
-
 
 void Nachos_Create(){
 
@@ -372,7 +385,6 @@ void Nachos_Open() {
  * @return  Si tiene éxito, devuelve la cantidad de bytes leídos. Si
  *          falla, devuelve -1.
  */
-
 
 void Nachos_Read() {
 
@@ -576,7 +588,7 @@ void Nachos_Write() {
 
   returnFromSystemCall();		// Update the PC registers
 
-}  // Nachos_Write
+}
 
 
 /////////////////////////// System call 8 ///////////////////////////
@@ -596,7 +608,6 @@ void Nachos_Write() {
  */
 
 void Nachos_Close(){
-
 
   OpenFileId descriptorFile = machine->ReadRegister(4); // Lee el id del file que queremos cerrar
   bool archivoEstaAbierto = 0;
@@ -732,11 +743,7 @@ void Nachos_SemCreate(){
 
   printf("    Cantidad de semáforos después del SemCreate: %d \n", cantidadSemaforosNachos );
 
-  //TODO: Preguntar si esto está bien
-
   returnFromSystemCall();
-
-
 
 }
 
@@ -809,7 +816,6 @@ void Nachos_SemSignal(){
     machine->WriteRegister(2,-1); // Retorna sin éxito
   }
 
-
   returnFromSystemCall();
 
 }
@@ -827,9 +833,6 @@ void Nachos_SemSignal(){
  */
 
 void Nachos_SemWait(){
-
-  // TODO: Preguntar si esto está bien
-
 
   int semId = machine->ReadRegister(4); // Saca el parámetro del registro
 
