@@ -49,9 +49,9 @@
 //	are in machine.h.
 //----------------------------------------------------------------------
 
+//NUEVO  tabla de threads activos actualmente
 
-threadsTabla* threadsActivos = new threadsTabla();   //NUEVO  tabla de threads activos actualmente
-														//solo esta implementado para exec y join (faltan los demas, creo)
+threadsTabla* threadsActivos = new threadsTabla();
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -67,13 +67,14 @@ void returnFromSystemCall() {
 
 
 
-
-
 //---------------------------NUEVO----------------------------------------
 
-/*
-	Lee de la memoria virtual
-*/
+/** ---  ReadFromNachosMemory ---
+ * Lee de la memoria virtual de NachOS.
+ * @param virtualmemory Posición en la memoria virtual de donde se quiere
+ *                      leer.
+ * @return Devuelve el string leído de la memoria de NachOS.
+ */
 
 char * ReadFromNachosMemory(int virtualmemory){
 	//buffer
@@ -94,10 +95,9 @@ char * ReadFromNachosMemory(int virtualmemory){
 	return string;
 }
 
-
-/*
-	Lo mismo que machine->startProcess
-*/
+/** ---  startProcess ---
+ * Efectúa lo mismo que machine->startProcess.
+ */
 
 void startProcess(const char *filename){
 	OpenFile *executable = fileSystem->Open(filename);
@@ -122,10 +122,14 @@ void startProcess(const char *filename){
 					// by doing the syscall "exit"
 }
 
-/*
-Inicializa los registros para el hilo nuevo
-recibe un puntero a la rutina que se va a ejecutar
-*/
+/** ---  NachosForkThread ---
+ * Inicializa los registros para el hilo nuevo que creó un fork
+ * recibe un puntero a la rutina que se va a ejecutar.
+ *
+ * @param funcPtr Puntero a la rutina que se va a ejecutar.
+ * @return No devuelve nada.
+ */
+
 
 void NachosForkThread(void* funcPtr){ //parametro es la direccion de la funcion que se va a correr en el nuevo Thread
 	//DEBUG
@@ -145,20 +149,12 @@ void NachosForkThread(void* funcPtr){ //parametro es la direccion de la funcion 
   machine->WriteRegister(PCReg, (long)funcPtr);
   //instruccion que sigue
   machine->WriteRegister(NextPCReg, x+4);
-
-
-	//ERRORES QUE ME ESTABAN DANDO
-  //printf("PageFaultException: %d (PageFaultException: No valid translation found)\n", PageFaultException);
-  //printf("AddressErrorException: %d (AddressErrorException: Unaligned reference or one that was beyond the end of the address space)\n", AddressErrorException);
-
-
   printf("\n");
 	//corre el programa
   machine->Run();
   //no ocupa volver del system call (ReturnFrom...)
-  ASSERT(false);          //no se para que es
+  ASSERT(false);
 }
-
 
 //-------------------- VERSIÓN CORREGIDA --------------------//
 
@@ -468,7 +464,7 @@ void Nachos_Read() {
         printf("    %d bytes leídos con éxito del archivo %d (UNIX) | %d (NachOS).\n", bytesLeidos, fileHandle, descriptorFile );
 
       }else{
-        printf("    Error en el Read\n");
+        printf("    Error en el Read, el archivo no existe.\n");
         machine->WriteRegister(2,-1); // Si el archivo no estaba abierto
       }
 
@@ -541,9 +537,9 @@ void Nachos_Write() {
 		//case  ConsoleError:
     case  ConsoleOutput: // Ambos casos se contemplan en 1
       printf("    Escribiendo en consola... \n");
-      printf("    --------------------------------------\n");
-      printf("    %s \n", buffer );
-      printf("    --------------------------------------\n");
+      printf("\n");
+      printf("    < %s \n", buffer );
+      printf("\n");
       machine->WriteRegister( 2, tamBuf ); // Devuelve la cantidad de bytes escritos
 		  break;
 		default:
@@ -603,14 +599,20 @@ void Nachos_Close(){
 
 
   OpenFileId descriptorFile = machine->ReadRegister(4); // Lee el id del file que queremos cerrar
-  bool archivoEstaAbierto = currentThread->space->openFilesTable->isOpened(descriptorFile);
+  bool archivoEstaAbierto = 0;
+  // Si el descriptor es -1 es porque está tratando de cerrar un archivo que no existe
+  if(descriptorFile != -1){
+    archivoEstaAbierto = currentThread->space->openFilesTable->isOpened(descriptorFile);
+    printf("    Cerrando archivo %d (NachOS)\n", descriptorFile);
+    printf("    Archivo está abierto?: %d\n", archivoEstaAbierto );
+
+  }else{
+    printf("    El archivo que está tratando de cerrar no existe.\n");
+  }
 
   // Primero pregunta si el archivo está abierto, si está abierto, utiliza el close de UNIX para cerrar el
   // archivo, luego hace las actualizaciones correspondientes en el bitmap de archivos abiertos
   // y el vector de fd's de los archivos abiertos, hace también el close de NachOS
-
-  printf("    Cerrando archivo %d (NachOS)\n", descriptorFile);
-  printf("    Archivo está abierto?: %d\n", archivoEstaAbierto );
 
   if (archivoEstaAbierto) {
     // Si está abierto, se hace el close de NachOS
@@ -625,6 +627,8 @@ void Nachos_Close(){
       printf("    Archivo %d (UNIX) cerrado con éxito.\n", handleUnix);
       machine->WriteRegister(2,1); // Si tiene éxito, devuelve un 1
     }
+  }else{
+    printf("    No se pudo cerrar el archivo especificado\n");
   }
 
   returnFromSystemCall();		// Update the PC registers
