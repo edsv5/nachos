@@ -18,7 +18,7 @@
 #include "copyright.h"
 #include "system.h"
 #include "addrspace.h"
-#include "noff.h"
+//#include "noff.h"
 
 //----------------------------------------------------------------------
 // SwapHeader
@@ -92,105 +92,79 @@ SwapHeader (NoffHeader *noffH)
 AddrSpace::AddrSpace(OpenFile *executable)
 {
   NoffHeader noffH;
-  unsigned int i, size;
+    unsigned int i, size;
+    //Cada address space inicializa su propia tabla de archivos abiertos
+    openFilesTable = new NachosOpenFilesTable();
 
-	// NUEVO : Cada address space inicializa su propia tabla de archivos abiertos
+    // El programa es leído del disco aquí, se comienza por leer el header del archivo, de ahí se saca toda la información importante sobre este
+    executable->ReadAt((char *)&noffH, sizeof(noffH), 0);
+    if ((noffH.noffMagic != NOFFMAGIC) && 
+		(WordToHost(noffH.noffMagic) == NOFFMAGIC))
+    	SwapHeader(&noffH);
+    ASSERT(noffH.noffMagic == NOFFMAGIC);
+    threadHeader.code = noffH.code;
+    threadHeader.initData = noffH.initData;
+    
 
-	openFilesTable = new NachosOpenFilesTable();
+// how big is address space?
+    size = noffH.code.size + noffH.initData.size + noffH.uninitData.size 
+			+ UserStackSize;	// we need to increase the size
+						// to leave room for the stack
+						
+	// Aquí se contempla que los segmentos no sean múltiplos exactos de una página (creo), redondea para arriba					
+    numPages = divRoundUp(size, PageSize);
+    size = numPages * PageSize;
+   
 
-	// El programa es leído del disco aquí, se comienza por leer el header del archivo, de ahí se saca toda la información importante sobre este
+    DEBUG('j', "Initializing address space, num pages %d, size %d\n", 
+					numPages, size);
 
-  executable->ReadAt((char *)&noffH, sizeof(noffH), 0);
-
-	//printf("El tamaño del encabezado es %d \n", sizeof(noffH));
-
-  if ((noffH.noffMagic != NOFFMAGIC) && (WordToHost(noffH.noffMagic) == NOFFMAGIC))
-    SwapHeader(&noffH);
-  ASSERT(noffH.noffMagic == NOFFMAGIC);
-
-	// how big is address space? - Aquí asigna el tamano del addrspace
-  size = noffH.code.size + noffH.initData.size + noffH.uninitData.size + UserStackSize;	// we need to increase the size
-	// to leave room for the stack
-	// Aquí se contempla que los segmentos no sean múltiplos exactos de una página (creo), redondea para arriba
-  numPages = divRoundUp(size, PageSize);
-  size = numPages * PageSize;
-
-	//printf("Tamaño del page: %d\n",PageSize );
-
-	//tamaño del proceso = tamaño del address space
-	//printf("El tamaño del address space es %d \n", size);
-	//El número mágico solamente sirve para identificar el formato NOFF, es simplemente un identificador arbitrario, aquí se imprime
-	//printf("El número mágico es %d \n", NOFFMAGIC);
-	//La pila es una constante que está definida en addrspace.h, en este caso, el largo es 1024, es decir, 8 páginas
-	//printf("El tamaño de la pila es %d \n", UserStackSize);
+// first, set up the translation 
+    pageTable = new TranslationEntry[numPages];
+	int freePage;
 
 
-	//Pregunta si esa condición se da, en el caso de que se dé, no sigue
-
-  ASSERT(numPages <= NumPhysPages);		// check we're not trying
-						// to run anything too big --
-						// at least until we have
-						// virtual memory
-
-  DEBUG('a', "Initializing address space, num pages %d, size %d\n", numPages, size);
-// first, set up the translation
-
-  pageTable = new TranslationEntry[numPages];
-  for (i = 0; i < numPages; i++) {
-		//printf("Pagina actual: %d\n", i);
-		pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
+    for (i = 0; i < numPages; i++) {
 		
-		/////////////CAMBIO TEMPORAL//////////////
-		//pageTable[i].physicalPage = mapMemoria->Find(); // Iguala la página al primer bit que esté libre del bitmap de memoria
-		//le cae encima al thread anterior
-		pageTable[i].physicalPage = i;
-		pageTable[i].valid = true;
-		pageTable[i].use = false;
-		pageTable[i].dirty = false;
-		pageTable[i].readOnly = false;
-		// if the code segment was entirely
-		// a separate page, we could set
-		// pages to be read-only
-  }
-
-// zero out the entire address space, to zero the unitialized data segment
+	pageTable[i].virtualPage = i;
+	 DEBUG('j', "Initializing page table, i %d, pageTable[]i.virtualPage %d\n", 
+					i,pageTable[i].virtualPage);
+	#ifdef VM
+	
+	#else
+	freePage = mapMemoria->Find();
+	pageTable[i].physicalPage = freePage;
+	//printf("Free Page %d \n",freePage);
+	  #endif 
+	   #ifdef VM
+     		pageTable[i].valid = false;
+  	 #else
+     		 pageTable[i].valid = true;
+  	 #endif
+	pageTable[i].use = false;
+	pageTable[i].dirty = false;
+	pageTable[i].readOnly = false;  // if the code segment was entirely on 
+					// a separate page, we could set its 
+					// pages to be read-only
+					
+    }
+    
+// zero out the entire address space, to zero the unitialized data segment 
 // and the stack segment
-  bzero(machine->mainMemory, size);
-
-// Aquí es que empieza a leer del disco, en el primer ReadAt leímos el encabezado
-// en estos se lee lo demás y se coloca en memoria para ser ejecutado
+   // bzero(machine->mainMemory, size);
 
 // then, copy in the code and data segments into memory
-  if (noffH.code.size > 0) {
-    DEBUG('a', "Initializing code segment, at 0x%x, size %d\n",
-		noffH.code.virtualAddr, noffH.code.size);
 
-    executable->ReadAt(&(machine->mainMemory[noffH.code.virtualAddr]),
-		noffH.code.size, noffH.code.inFileAddr);
-
-		//printf("Cantidad de code leída: %d\n", noffH.code.size);
-		//printf("Posición de lectura del code: %d\n", noffH.code.inFileAddr);
-		//printf("Posición en la memoria en la que se coloca lo leído: %s \n", &(machine->mainMemory[noffH.code.virtualAddr]) );
-
-  }
-  if (noffH.initData.size > 0) {
-    DEBUG('a', "Initializing data segment, at 0x%x, size %d\n",
-		noffH.initData.virtualAddr, noffH.initData.size);
-
-		//Se agrega esto para que imprima//
-		//printf('a', "Initializing data segment, at 0x%x, size %d\n", noffH.initData.virtualAddr, noffH.initData.size);
-		//Se agrega esto para que imprima//
-
-		executable->ReadAt(&(machine->mainMemory[noffH.initData.virtualAddr]),
-		noffH.initData.size, noffH.initData.inFileAddr);
-
-		//printf("Cantidad de initData leída: %d\n", noffH.initData.size);
-		//printf("Posición de lectura de initData: %d\n", noffH.initData.inFileAddr);
-		//printf("Posición en la memoria en la que se coloca lo leído: %s \n", &(machine->mainMemory[noffH.initData.virtualAddr]) );
-
-		//La dirección del buffer en el que se colocan las cosas está en &(machine->mainMemory[noffH.initData.virtualAddr])
-
-  }
+	 #ifdef VM
+		
+	#else
+	for(unsigned int j = 0;j<numPages;j++){
+		int page = pageTable[j].physicalPage;
+		executable->ReadAt(&(machine->mainMemory[128 * page]),
+				   128, noffH.code.inFileAddr + j * 128);
+		DEBUG('M',"En memoria esta %d",	&(machine->mainMemory[128 * page]));	
+	}
+	#endif
 }
 
 
@@ -210,41 +184,42 @@ TranslationEntry* AddrSpace::getPageTable(){
 ////constructor con parametro AddrSpace
 
 AddrSpace::AddrSpace(AddrSpace* space){
-	//calcula las paginas que ocupa para el stack
-	int newNumPages = divRoundUp(UserStackSize, PageSize);
-	//PageTable "padre" de donde se copian los datos
-	TranslationEntry* padre = space->getPageTable();
+	
+	numPages = space->getNumPages();
 
-	// AÑADIDO
-	//El OpenFTable es el mismo del currentThread
-	openFilesTable = space->openFilesTable;
-
-	//verifica que las paginas usadas mas las del stack no sean mas que las paginas disponibles
-	if(numPages + newNumPages <= NumPhysPages){
-		//espacio suficiente
-		//crea PageTable con espacio para el stack
-		TranslationEntry *newPageTable = new TranslationEntry[numPages + newNumPages];
-		int i;
-		//copia los datos del "padre"
-		for(i = 0; i < numPages; i++){
-			newPageTable[i] = padre[i];
-		}
-		//espacio del stack
-		for(i = numPages; i < newNumPages; i++){
-			newPageTable[i].virtualPage = i;
-			newPageTable[i].physicalPage = i;
-			newPageTable[i].valid = true;
-			newPageTable[i].use = false;
-			newPageTable[i].dirty = false;
-			newPageTable[i].readOnly = false;
-		}
-		//nuevos valores para los atributos
-		pageTable = newPageTable;		//PageTable con stack
-		numPages = (numPages + newNumPages);		//paginas usadas anteriormente mas las paginas de stack
-
-	}else{
-		//espacio insuficiente
-		DEBUG('a', "Espacio insuficiente para pila\n");
+	//Crea TranslationTable para pageTable
+    pageTable = new TranslationEntry[numPages];
+	int freePage;
+	unsigned int i;
+    TranslationEntry* pageTableFather = space->getPageTable();
+	
+	   DEBUG('j', "Initializing address space, num pages %d, size %d\n", 
+					numPages, UserStackSize);
+	//Copia pageTable de space
+    for (i = 0; i < numPages - 8; i++) {
+	pageTable[i].virtualPage = i;
+	pageTable[i].physicalPage = pageTableFather[i].physicalPage;
+	pageTable[i].valid = true;
+	pageTable[i].use = false;
+	pageTable[i].dirty = false;
+	pageTable[i].readOnly = false;  // if the code segment was entirely on 
+					// a separate page, we could set its 
+					// pages to be read-only
+    }
+	//Crea espacio nuevo para el Thread
+  for( i; i< numPages;i++){
+	pageTable[i].virtualPage = i;
+	freePage = mapMemoria->Find();
+	pageTable[i].valid = true;
+	pageTable[i].use = false;
+	pageTable[i].dirty = false;
+	pageTable[i].readOnly = false; 
+	if(-1 != freePage){
+		pageTable[i].physicalPage = freePage;
+		//printf("Free Page %d \n",freePage);
+		 // if the code segment was entirely on 				
+		bzero((void*)&machine->mainMemory[128 * pageTable[i].physicalPage], 128);
+	}
 	}
 }
 

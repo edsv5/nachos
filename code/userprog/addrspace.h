@@ -15,12 +15,13 @@
 
 #include "copyright.h"
 #include "filesys.h"
+#include "noff.h"
 
 // Para poder usar nuestro NachosOpenFilesTable
 
 #include "NachosOpenFilesTable.h"
 
-#define UserStackSize		2048 	// increase this as necessary!
+#define UserStackSize		1024 	// increase this as necessary!
 
 class AddrSpace {
   public:
@@ -41,7 +42,7 @@ class AddrSpace {
     TranslationEntry* getPageTable();
 //----------------------------------------------------------------------
 
-
+	noffHeader threadHeader; 		//encabezado de ejecutable
 
 
     void InitRegisters();		// Initialize user-level CPU registers,
