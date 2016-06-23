@@ -856,6 +856,12 @@ void Nachos_SemWait(){
 
 }
 
+void Nachos_PageFault(){
+	printf("PageFaultException: pagina %d\n", machine->ReadRegister(39));
+	int direccion;  //direccion en memoria
+	//interrupt->Halt();
+}
+
 
 void
 ExceptionHandler(ExceptionType which)
@@ -932,6 +938,15 @@ ExceptionHandler(ExceptionType which)
           break;
       }
       break;
+    case PageFaultException:
+		Nachos_PageFault();
+		ASSERT(false);
+		break;
+	case AddressErrorException:
+		printf("AddressErrorException\n");
+		ASSERT(false);
+		break;
+    break;
     default:
       printf( "Unexpected exception %d\n", which );
       ASSERT(false);

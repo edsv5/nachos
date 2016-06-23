@@ -102,8 +102,9 @@ AddrSpace::AddrSpace(OpenFile *executable)
 		(WordToHost(noffH.noffMagic) == NOFFMAGIC))
     	SwapHeader(&noffH);
     ASSERT(noffH.noffMagic == NOFFMAGIC);
+    
     threadHeader.code = noffH.code;
-    threadHeader.initData = noffH.initData;
+    threadHeader.initData = noffH.initData; 
     
 
 // how big is address space?
@@ -123,7 +124,6 @@ AddrSpace::AddrSpace(OpenFile *executable)
     pageTable = new TranslationEntry[numPages];
 	int freePage;
 
-
     for (i = 0; i < numPages; i++) {
 		
 	pageTable[i].virtualPage = i;
@@ -132,15 +132,14 @@ AddrSpace::AddrSpace(OpenFile *executable)
 	#ifdef VM
 	
 	#else
-	freePage = mapMemoria->Find();
-	pageTable[i].physicalPage = freePage;
-	//printf("Free Page %d \n",freePage);
-	  #endif 
-	   #ifdef VM
-     		pageTable[i].valid = false;
-  	 #else
-     		 pageTable[i].valid = true;
-  	 #endif
+		freePage = mapMemoria->Find();
+		pageTable[i].physicalPage = freePage;		
+	#endif 
+	#ifdef VM
+		pageTable[i].valid = false;
+  	#else
+     	pageTable[i].valid = true;
+  	#endif
 	pageTable[i].use = false;
 	pageTable[i].dirty = false;
 	pageTable[i].readOnly = false;  // if the code segment was entirely on 
@@ -158,12 +157,12 @@ AddrSpace::AddrSpace(OpenFile *executable)
 	 #ifdef VM
 		
 	#else
-	for(unsigned int j = 0;j<numPages;j++){
-		int page = pageTable[j].physicalPage;
-		executable->ReadAt(&(machine->mainMemory[128 * page]),
-				   128, noffH.code.inFileAddr + j * 128);
-		DEBUG('M',"En memoria esta %d",	&(machine->mainMemory[128 * page]));	
-	}
+		for(unsigned int j = 0;j<numPages;j++){
+			int page = pageTable[j].physicalPage;
+			executable->ReadAt(&(machine->mainMemory[128 * page]),
+					   128, noffH.code.inFileAddr + j * 128);
+			DEBUG('M',"En memoria esta %d",	&(machine->mainMemory[128 * page]));	
+		}
 	#endif
 }
 
@@ -292,7 +291,11 @@ void AddrSpace::SaveState()
 //----------------------------------------------------------------------
 
 void AddrSpace::RestoreState()
-{
-    machine->pageTable = pageTable;
-    machine->pageTableSize = numPages;
+{	
+	#ifdef VM
+	
+	#else
+		machine->pageTable = pageTable;
+		machine->pageTableSize = numPages;
+    #endif
 }
